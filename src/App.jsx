@@ -4,8 +4,10 @@ import {
   ChevronDown, Circle, Clock3, Download, FileBarChart, FileText, Grid2X2,
   Image, Instagram, LayoutDashboard, Menu, MessageCircle, MoreHorizontal,
   Paperclip, PencilLine, Play, Plus, Send, Sparkles, Target, TrendingUp,
-  UserRound, Users, Video, X, Zap
+  UserRound, Users, Video, X, Zap, CreditCard, Package, Receipt, Layers,
+  Megaphone, Workflow, Palette
 } from './icons.jsx'
+import { accountOverview, agencyServiceCategories, packageExtras } from './data/account-data.js'
 
 const navItems = [
   { id: 'summary', label: 'Resumen del mes', icon: LayoutDashboard },
@@ -13,7 +15,17 @@ const navItems = [
   { id: 'calendar', label: 'Calendario', icon: CalendarDays },
   { id: 'report', label: 'Reporte mensual', icon: FileBarChart },
   { id: 'messages', label: 'Mensajes', icon: MessageCircle, dot: true },
+  { id: 'account', label: 'Cuenta y servicios', icon: CreditCard },
 ]
+
+const accountStatusMap = {
+  active: { label: 'Activo', className: 'active' },
+  paused: { label: 'Pausado', className: 'paused' },
+  expired: { label: 'Vencido', className: 'expired' },
+  pending: { label: 'Pendiente', className: 'pending' },
+  paid: { label: 'Pagada', className: 'paid' },
+  overdue: { label: 'Vencida', className: 'overdue' },
+}
 
 const statusMap = {
   review: { label: 'Por revisar', className: 'review' },
@@ -89,7 +101,7 @@ function Sidebar({ active, setActive, open, setOpen }) {
 }
 
 function Topbar({ active, setMenuOpen }) {
-  const titles = { summary: 'Resumen del mes', deliverables: 'Entregables', calendar: 'Calendario de contenido', report: 'Reporte mensual', messages: 'Mensajes' }
+  const titles = { summary: 'Resumen del mes', deliverables: 'Entregables', calendar: 'Calendario de contenido', report: 'Reporte mensual', messages: 'Mensajes', account: 'Cuenta y servicios' }
   return <header className="topbar">
     <button className="menu-btn" onClick={() => setMenuOpen(true)} aria-label="Abrir menú"><Menu size={22} /></button>
     <div><span>ALMA STUDIO <i>/</i></span><strong>{titles[active]}</strong></div>
@@ -204,6 +216,76 @@ function Report({ approved, onApprove }) {
   </div>
 }
 
+
+function AccountStatus({ status }) {
+  const data = accountStatusMap[status]
+  return <span className={`account-status ${data.className}`}><i />{data.label}</span>
+}
+
+const extraIcons = { design: Image, carousel: Layers, video: Video, stories: Instagram, ads: Megaphone, event: CalendarDays }
+const categoryIcons = { strategy: Target, content: Palette, sales: TrendingUp, operations: Workflow }
+
+function RequestDialog({ request, onClose, onConfirm }) {
+  return <div className="modal-backdrop" onMouseDown={onClose}><div className="request-dialog" onMouseDown={event => event.stopPropagation()}>
+    <button className="modal-close" onClick={onClose}><X size={20} /></button>
+    <div className="request-dialog-icon"><Sparkles size={21} /></div>
+    <span className="eyebrow">SOLICITUD A TU EQUIPO</span>
+    <h2>{request.name}</h2>
+    <p>No se realizará ningún cobro ahora. El equipo BIEM revisará tu solicitud y te contactará con alcance, tiempos y próximos pasos.</p>
+    <div className="request-summary"><span>{request.kind === 'extra' ? 'Extra para tu paquete' : 'Servicio adicional'}</span><strong>Desde ${request.price}</strong></div>
+    <div className="request-dialog-actions"><button className="secondary-button" onClick={onClose}>Volver</button><button className="primary-button" onClick={onConfirm}>Enviar solicitud <ArrowRight size={16} /></button></div>
+  </div></div>
+}
+
+function AccountServices() {
+  const [request, setRequest] = useState(null)
+  const [requested, setRequested] = useState([])
+  const [details, setDetails] = useState(null)
+  const pkg = accountOverview.package
+  const invoice = accountOverview.invoice
+  const usage = Math.round((pkg.usage.used / pkg.usage.limit) * 100)
+  const sendRequest = () => { setRequested(items => [...items, request.id]); setRequest(null) }
+  const openRequest = (item, kind) => setRequest({ id: item.id, name: item.name, price: item.price || item.priceFrom, kind })
+
+  return <div className="page-content account-page">
+    <SectionHeading eyebrow="TU RELACIÓN CON BIEM" title="Cuenta y servicios" copy="Consulta tu plan, próximos pagos y opciones de apoyo para cada etapa de tu negocio." />
+
+    <section className="account-overview-grid">
+      <article className="account-card package-card">
+        <div className="account-card-header"><div className="account-card-icon package"><Package size={21} /></div><AccountStatus status={pkg.status} /></div>
+        <span className="account-label">PAQUETE CONTRATADO</span><h2>{pkg.name}</h2><p className="account-card-copy">Acompañamiento mensual de estrategia, contenido y gestión para crecer con claridad.</p>
+        <div className="account-dates"><div><span>INICIO</span><strong>{pkg.startDate}</strong></div><div><span>RENOVACIÓN</span><strong>{pkg.renewalDate}</strong></div></div>
+        <ul className="included-services">{pkg.services.slice(0, 4).map(service => <li key={service}><Check size={13} />{service}</li>)}</ul>
+        <div className="package-usage"><div><span>USO DEL MES</span><strong>{pkg.usage.used} de {pkg.usage.limit} {pkg.usage.unit} utilizadas</strong></div><b>{usage}%</b><div className="usage-track"><i style={{ width: `${usage}%` }} /></div></div>
+        <button className="secondary-button full-button" onClick={() => setDetails('package')}>Ver paquete completo <ArrowRight size={15} /></button>
+      </article>
+
+      <article className="account-card invoice-card">
+        <div className="account-card-header"><div className="account-card-icon invoice"><Receipt size={21} /></div><AccountStatus status={invoice.status} /></div>
+        <span className="account-label">PRÓXIMA FACTURA</span><div className="invoice-amount"><small>USD</small><strong>${invoice.amount}</strong></div><p className="invoice-concept">{invoice.concept}</p>
+        <div className="invoice-details"><div><CalendarDays size={16} /><span>Fecha de pago<strong>{invoice.dueDate}</strong></span></div><div><CreditCard size={16} /><span>Método sugerido<strong>{invoice.paymentMethod}</strong></span></div></div>
+        <div className="invoice-note"><Sparkles size={15} /><p>Te enviaremos un recordatorio 3 días antes de la fecha de pago.</p></div>
+        <div className="invoice-actions"><button className="primary-button" onClick={() => setDetails('invoice')}>Ver detalles de pago</button><button className={`secondary-button ${requested.includes('invoice-copy') ? 'requested' : ''}`} onClick={() => setRequested(items => items.includes('invoice-copy') ? items : [...items, 'invoice-copy'])}>{requested.includes('invoice-copy') ? <><Check size={15} /> Solicitada</> : 'Solicitar factura'}</button></div>
+      </article>
+    </section>
+
+    <section className="account-section">
+      <div className="account-section-heading"><div><span className="eyebrow">FLEXIBILIDAD PARA ESTE MES</span><h2>Mejora tu paquete actual</h2><p>Agrega solo lo que necesitas. Tu equipo confirmará disponibilidad antes de cualquier cobro.</p></div><span className="soft-label">EXTRAS OPCIONALES</span></div>
+      <div className="extras-grid">{packageExtras.map(extra => { const Icon = extraIcons[extra.icon]; const isRequested = requested.includes(extra.id); return <article className="extra-card" key={extra.id}><div className="extra-icon"><Icon size={19} /></div><div className="extra-card-copy"><h3>{extra.name}</h3><p>{extra.description}</p></div><div className="extra-card-footer"><span>Desde <strong>${extra.price}</strong></span><button className={isRequested ? 'requested' : ''} onClick={() => !isRequested && openRequest(extra, 'extra')}>{isRequested ? <><Check size={14} /> Solicitado</> : <>Solicitar <Plus size={14} /></>}</button></div></article>})}</div>
+    </section>
+
+    <section className="account-section services-section">
+      <div className="account-section-heading"><div><span className="eyebrow">MÁS FORMAS DE ACOMPAÑARTE</span><h2>Servicios adicionales de la agencia</h2><p>Soluciones especializadas para proyectos que requieren un alcance distinto a tu plan mensual.</p></div></div>
+      <div className="service-categories">{agencyServiceCategories.map(category => { const Icon = categoryIcons[category.id]; return <article className={`service-category ${category.id}`} key={category.id}><header><div className="category-icon"><Icon size={20} /></div><div><h3>{category.name}</h3><p>{category.description}</p></div></header><div className="service-list">{category.services.map(service => { const isRequested = requested.includes(service.id); return <div className="service-row" key={service.id}><div><h4>{service.name}</h4><p>{service.description}</p></div><div className="service-action"><span>Desde <strong>${service.priceFrom}</strong></span><button className={isRequested ? 'requested' : ''} onClick={() => !isRequested && openRequest(service, 'service')}>{isRequested ? <><Check size={13} /> Solicitado</> : 'Solicitar servicio'}</button></div></div>})}</div></article>})}</div>
+    </section>
+
+    <section className="account-help"><div className="help-avatar">BI</div><div><span className="eyebrow">¿NO ESTÁS SEGURA DE QUÉ NECESITAS?</span><h3>Conversemos antes de decidir.</h3><p>Tu estratega puede ayudarte a priorizar la opción con más impacto para tu momento actual.</p></div><button className="secondary-button"><MessageCircle size={16} /> Hablar con mi estratega</button></section>
+
+    {request && <RequestDialog request={request} onClose={() => setRequest(null)} onConfirm={sendRequest} />}
+    {details && <div className="modal-backdrop" onMouseDown={() => setDetails(null)}><div className="account-details-modal" onMouseDown={event => event.stopPropagation()}><button className="modal-close" onClick={() => setDetails(null)}><X size={20} /></button>{details === 'package' ? <><span className="eyebrow">DETALLE DEL PAQUETE</span><h2>{pkg.name}</h2><p>Tu plan se renueva de forma mensual e incluye:</p><ul>{pkg.services.map(service => <li key={service}><CheckCircle2 size={16} />{service}</li>)}</ul><div className="detail-meta"><span>Ciclo de facturación<strong>{pkg.billingCycle}</strong></span><span>Próxima renovación<strong>{pkg.renewalDate}</strong></span></div></> : <><span className="eyebrow">DETALLE DE PAGO</span><h2>${invoice.amount} USD</h2><p>{invoice.concept}</p><div className="payment-reference"><span>REFERENCIA</span><strong>{invoice.id}</strong></div><div className="detail-meta"><span>Fecha límite<strong>{invoice.dueDate}</strong></span><span>Método sugerido<strong>{invoice.paymentMethod}</strong></span></div><button className="primary-button full-button">Recibir instrucciones de pago</button></>}</div></div>}
+  </div>
+}
+
 function Messages() {
   const [text, setText] = useState('')
   const [messages, setMessages] = useState([
@@ -231,6 +313,7 @@ export default function App() {
     calendar: <CalendarPage />,
     report: <Report approved={reportApproved} onApprove={() => setReportApproved(true)} />,
     messages: <Messages />,
+    account: <AccountServices />,
   }
   return <div className="app-shell"><Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} />{menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}<main><Topbar active={active} setMenuOpen={setMenuOpen} />{content[active]}</main></div>
 }

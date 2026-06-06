@@ -8,9 +8,12 @@
     "node": "20.x"
   },
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "check": "node scripts/check.mjs && node --check src/main.js && node --check src/App.js && node --check src/icons.js && node --check src/mini-react.js",
+    "build": "tsc && node scripts/build.mjs",
+    "check": "tsc --noEmit && node scripts/check.mjs",
     "dev": "npm run build && node scripts/serve.mjs",
     "preview": "node scripts/serve.mjs"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
   }
 }

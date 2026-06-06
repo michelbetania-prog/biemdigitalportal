@@ -6,6 +6,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const requiredFiles = [
   'index.html',
   'src/App.js',
+  'src/App.jsx',
+  'src/data/account-data.js',
   'src/icons.js',
   'src/main.js',
   'src/mini-react.js',
