@@ -3,12 +3,14 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "scripts": {
-    "build": "bash scripts/build.sh",
-    "dev": "python3 -m http.server 4173",
-    "preview": "python3 -m http.server 4173",
-    "check": "tsc --noEmit"
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": "20.x"
   },
-  "dependencies": {},
-  "devDependencies": {}
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs && node --check src/main.js && node --check src/App.js && node --check src/icons.js && node --check src/mini-react.js",
+    "dev": "npm run build && node scripts/serve.mjs",
+    "preview": "node scripts/serve.mjs"
+  }
 }
