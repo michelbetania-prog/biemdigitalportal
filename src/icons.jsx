@@ -26,3 +26,11 @@ export const Target=make(<><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12
 export const Sparkles=make(<><path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/><path d="m19 15 .7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7z"/></>)
 export const Zap=make(<path d="m13 2-9 12h7l-1 8 9-12h-7z"/>), PencilLine=make(<><path d="m4 20 4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></>)
 export const Plus=make(<><path d="M12 5v14M5 12h14"/></>), Circle=make(<circle cx="12" cy="12" r="9"/>)
+
+export const CreditCard=make(<><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></>)
+export const Package=make(<><path d="m4 7 8-4 8 4-8 4z"/><path d="M4 7v10l8 4 8-4V7M12 11v10"/></>)
+export const Receipt=make(<><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></>)
+export const Layers=make(<><path d="m12 2 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/></>)
+export const Megaphone=make(<><path d="m3 11 15-6v14L3 13z"/><path d="M7 14v5a2 2 0 0 0 2 2h2v-6"/></>)
+export const Workflow=make(<><rect x="3" y="3" width="6" height="5" rx="1"/><rect x="15" y="16" width="6" height="5" rx="1"/><path d="M6 8v4h12v4M18 8v4"/></>)
+export const Palette=make(<><path d="M12 3a9 9 0 0 0 0 18h1.5a2 2 0 0 0 0-4H12a2 2 0 0 1 0-4h5a4 4 0 0 0 4-4c0-3-4-6-9-6Z"/><circle cx="7" cy="10" r="1" fill="currentColor"/><circle cx="10" cy="7" r="1" fill="currentColor"/><circle cx="15" cy="7" r="1" fill="currentColor"/></>)
