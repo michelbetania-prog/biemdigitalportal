@@ -33,3 +33,7 @@ El repositorio actual no contiene ese archivo. Ese mensaje significa que el depl
 - Panel privado del equipo: `/admin`
 
 Vercel redirige ambas rutas a la SPA mediante las reglas de `vercel.json`. La ruta `/admin` incluye una pantalla de acceso mock; debe conectarse a un proveedor de autenticación antes de producción.
+
+## Supabase Auth
+
+Configura `SUPABASE_URL` y `SUPABASE_PUBLISHABLE_KEY` en Vercel. La migración, creación de usuarios, roles y matriz RLS están documentadas en `SUPABASE.md`.

@@ -1,13 +1,12 @@
 import { createElement, StrictMode } from './mini-react.js'
 import { createRoot } from './mini-react.js'
-import App from './App.jsx'
-import AdminApp from './AdminApp.jsx'
+import AuthApp from './AuthApp.jsx'
 
 const isAdmin = window.location.pathname.startsWith('/admin')
-document.title = isAdmin ? 'BIEM — Panel administrativo' : 'BIEM — Portal cliente'
+document.title = isAdmin ? 'BIEM — Panel administrativo' : 'BIEM — Portal'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    {isAdmin ? <AdminApp /> : <App />}
+    <AuthApp />
   </StrictMode>,
 )

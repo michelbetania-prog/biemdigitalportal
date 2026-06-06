@@ -83,10 +83,8 @@ export const adminActivity = [
 ]
 
 export const rolePermissions = {
-  Admin:['dashboard','clients','packages','deliverables','calendar','billing','requests','services','reports','team','settings'],
-  Estratega:['dashboard','clients','deliverables','calendar','requests','reports'],
-  Diseñador:['dashboard','deliverables','calendar'],
-  'Community manager':['dashboard','deliverables','calendar','requests'],
-  'Editor de video':['dashboard','deliverables','calendar'],
-  Finanzas:['dashboard','billing'],
+  admin:['dashboard','clients','packages','deliverables','calendar','billing','requests','services','reports','team','settings'],
+  team:['dashboard','clients','deliverables','calendar','requests','reports'],
+  viewer:['dashboard','clients','packages','deliverables','calendar','billing','requests','services','reports','team'],
+  client:[],
 }

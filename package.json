@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc && node scripts/build.mjs",
-    "check": "tsc --noEmit && node scripts/check.mjs",
+    "check": "tsc --noEmit && node scripts/check.mjs && node scripts/check-supabase.mjs",
     "dev": "npm run build && node scripts/serve.mjs",
     "preview": "node scripts/serve.mjs"
   },

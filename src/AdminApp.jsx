@@ -41,24 +41,14 @@ function Badge({ value, type='status' }) {
   return <span className={`admin-badge ${type} ${value}`}><i />{labels[value] || value}</span>
 }
 
-function AdminLogin({ onLogin }) {
-  const [email, setEmail] = useState('admin@biemdigital.com')
-  const [password, setPassword] = useState('demo1234')
-  const [visible, setVisible] = useState(false)
-  return <div className="admin-login-shell">
-    <div className="admin-login-brand"><AdminLogo /><div><span>PORTAL PRIVADO</span><h1>Todo tu equipo.<br />Todo el trabajo.<br /><i>Una sola visión.</i></h1><p>Gestiona clientes, entregables y resultados desde un espacio diseñado para agencias que cuidan cada detalle.</p></div><small>© 2026 Biem Digital · Acceso confidencial</small></div>
-    <div className="admin-login-panel"><div className="login-card"><div className="login-lock"><Lock size={20} /></div><span className="admin-eyebrow">ACCESO AL EQUIPO</span><h2>Bienvenida de nuevo</h2><p>Ingresa con tus credenciales internas.</p><label>Correo electrónico<input data-focus-id="admin-email" type="email" value={email} onChange={event => setEmail(event.target.value)} /></label><label>Contraseña<div className="password-input"><input data-focus-id="admin-password" type={visible ? 'text' : 'password'} value={password} onChange={event => setPassword(event.target.value)} /><button onClick={() => setVisible(!visible)}><Eye size={17} /></button></div></label><div className="login-meta"><label><input type="checkbox" /> Recordarme</label><button>¿Olvidaste tu contraseña?</button></div><button className="admin-primary login-submit" disabled={!email || !password} onClick={onLogin}>Ingresar al panel <ArrowRight size={17} /></button><div className="demo-access"><Shield size={15} /><span><strong>Acceso de demostración</strong>Las credenciales ya están completadas.</span></div></div></div>
-  </div>
-}
-
-function AdminSidebar({ active, setActive, open, setOpen, role, onLogout }) {
+function AdminSidebar({ active, setActive, open, setOpen, role, profile, onLogout }) {
   const allowed = rolePermissions[role] || []
-  return <aside className={`admin-sidebar ${open ? 'open' : ''}`}><div className="admin-sidebar-head"><AdminLogo /><button className="admin-mobile-close" onClick={() => setOpen(false)}><X size={20} /></button></div><div className="admin-workspace"><div className="admin-workspace-icon">BD</div><div><small>ESPACIO DE TRABAJO</small><strong>Biem Digital</strong></div><ChevronDown size={15} /></div><nav><span>GESTIÓN</span>{adminNav.filter(item => allowed.includes(item.id)).map(item => { const Icon=item.icon; return <button key={item.id} className={active===item.id?'active':''} onClick={() => { setActive(item.id); setOpen(false) }}><Icon size={18}/><b>{item.label}</b>{item.badge && <em>{item.badge}</em>}</button>})}</nav><div className="admin-sidebar-user"><div className="team-avatar">CR</div><div><strong>Camila Ríos</strong><span>{role}</span></div><button onClick={onLogout} title="Cerrar sesión"><LogOut size={17}/></button></div></aside>
+  return <aside className={`admin-sidebar ${open ? 'open' : ''}`}><div className="admin-sidebar-head"><AdminLogo /><button className="admin-mobile-close" onClick={() => setOpen(false)}><X size={20} /></button></div><div className="admin-workspace"><div className="admin-workspace-icon">BD</div><div><small>ESPACIO DE TRABAJO</small><strong>Biem Digital</strong></div><ChevronDown size={15} /></div><nav><span>GESTIÓN</span>{adminNav.filter(item => allowed.includes(item.id)).map(item => { const Icon=item.icon; return <button key={item.id} className={active===item.id?'active':''} onClick={() => { setActive(item.id); setOpen(false) }}><Icon size={18}/><b>{item.label}</b>{item.badge && <em>{item.badge}</em>}</button>})}</nav><div className="admin-sidebar-user"><div className="team-avatar">{(profile.full_name || profile.email || 'BI').split(' ').map(part => part[0]).join('').slice(0,2).toUpperCase()}</div><div><strong>{profile.full_name || profile.email}</strong><span>{role}</span></div><button onClick={onLogout} title="Cerrar sesión"><LogOut size={17}/></button></div></aside>
 }
 
-function AdminTopbar({ active, setMenuOpen, role, setRole }) {
+function AdminTopbar({ active, setMenuOpen, role, profile }) {
   const title=adminNav.find(item=>item.id===active)?.label || 'Dashboard'
-  return <header className="admin-topbar"><button className="admin-menu-button" onClick={() => setMenuOpen(true)}><Menu size={21}/></button><div><span>BIEM DIGITAL <i>/</i></span><strong>{title}</strong></div><div className="admin-top-actions"><div className="global-search"><Search size={16}/><span>Buscar cliente, pieza o factura...</span><kbd>⌘ K</kbd></div><button className="admin-icon-button"><Bell size={18}/><i/></button><div className="role-switch"><div className="team-avatar">CR</div><select value={role} onChange={event=>setRole(event.target.value)}>{Object.keys(rolePermissions).map(item=><option key={item}>{item}</option>)}</select></div></div></header>
+  return <header className="admin-topbar"><button className="admin-menu-button" onClick={() => setMenuOpen(true)}><Menu size={21}/></button><div><span>BIEM DIGITAL <i>/</i></span><strong>{title}</strong></div><div className="admin-top-actions"><div className="global-search"><Search size={16}/><span>Buscar cliente, pieza o factura...</span><kbd>⌘ K</kbd></div><button className="admin-icon-button"><Bell size={18}/><i/></button><div className="role-switch"><div className="team-avatar">{(profile.full_name || profile.email || 'BI').slice(0,2).toUpperCase()}</div><span>{role}</span></div></div></header>
 }
 
 function AdminHeading({ eyebrow, title, copy, action }) {
@@ -133,16 +123,15 @@ function SettingsPage() {
   return <div className="admin-page"><AdminHeading eyebrow="PERSONALIZACIÓN Y OPERACIÓN" title="Configuración del portal" copy="Administra la identidad y datos que ven tus clientes." action={<button className="admin-primary"><Check size={16}/>Guardar cambios</button>}/><div className="settings-layout"><nav><button className="active"><Palette size={16}/>Identidad de marca</button><button><CreditCard size={16}/>Datos de pago</button><button><MessageCircle size={16}/>Comunicación</button><button><Shield size={16}/>Seguridad</button></nav><div className="settings-card"><div className="settings-title"><div><span className="admin-eyebrow">IDENTIDAD</span><h2>Marca de la agencia</h2><p>Esta información aparece en el portal de cada cliente.</p></div><div className="settings-logo"><span className="logo-mark"><i/><i/><i/></span></div></div><div className="form-grid"><label>Nombre de la agencia<input value="Biem Digital"/></label><label>Correo de contacto<input value="hola@biemdigital.com"/></label><label>Teléfono<input value="+57 300 000 0000"/></label><label>Sitio web<input value="biemdigital.com"/></label></div><label className="admin-field">Mensaje de bienvenida<textarea>Todo lo que estamos construyendo para tu marca, en un solo lugar.</textarea></label><div className="color-settings"><span>COLORES PRINCIPALES</span><div><label><i style={{background:'#17201d'}}/>Principal<input value="#17201D"/></label><label><i style={{background:'#ef6e55'}}/>Acento<input value="#EF6E55"/></label><label><i style={{background:'#f5f5f1'}}/>Fondo<input value="#F5F5F1"/></label></div></div><label className="admin-field">Texto de confidencialidad<textarea>La información de este portal es confidencial y exclusiva para el cliente.</textarea></label><label className="switch-field"><span><strong>Mostrar “Powered by Biem Digital”</strong><small>Firma visible en el pie del portal del cliente.</small></span><i className="admin-switch on"/></label></div></div></div>
 }
 
-export default function AdminApp() {
-  const [authenticated,setAuthenticated]=useState(false)
+export default function AdminApp({ profile, onSignOut }) {
   const [active,setActive]=useState('dashboard')
   const [menuOpen,setMenuOpen]=useState(false)
-  const [role,setRole]=useState('Admin')
   const [client,setClient]=useState(null)
   const [deliverable,setDeliverable]=useState(null)
-  if(!authenticated) return <AdminLogin onLogin={()=>setAuthenticated(true)}/>
+  const role=profile.role
   const allowed=rolePermissions[role]||[]
+  const readOnly=role==='viewer'
   if(!allowed.includes(active)) queueMicrotask(()=>setActive(allowed[0]||'dashboard'))
   const pages={dashboard:<Dashboard setActive={setActive}/>,clients:<Clients onOpen={setClient}/>,packages:<Packages/>,deliverables:<Deliverables onOpen={setDeliverable}/>,calendar:<AdminCalendar/>,billing:<Billing/>,requests:<Requests/>,services:<Services/>,reports:<Reports/>,team:<Team/>,settings:<SettingsPage/>}
-  return <div className="admin-shell"><AdminSidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} role={role} onLogout={()=>setAuthenticated(false)}/>{menuOpen&&<div className="admin-overlay" onClick={()=>setMenuOpen(false)}/>}<main className="admin-main"><AdminTopbar active={active} setMenuOpen={setMenuOpen} role={role} setRole={setRole}/>{pages[active]}</main>{client&&<ClientDetail client={client} onClose={()=>setClient(null)}/>} {deliverable&&<DeliverableDetail item={deliverable} onClose={()=>setDeliverable(null)}/>}</div>
+  return <div className={`admin-shell ${readOnly?'read-only':''}`}><AdminSidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} role={role} profile={profile} onLogout={onSignOut}/>{menuOpen&&<div className="admin-overlay" onClick={()=>setMenuOpen(false)}/>}<main className="admin-main"><AdminTopbar active={active} setMenuOpen={setMenuOpen} role={role} profile={profile}/>{readOnly&&<div className="read-only-banner"><Eye size={14}/>Modo de solo lectura</div>}{pages[active]}</main>{client&&<ClientDetail client={client} onClose={()=>setClient(null)}/>} {deliverable&&<DeliverableDetail item={deliverable} onClose={()=>setDeliverable(null)}/>}</div>
 }

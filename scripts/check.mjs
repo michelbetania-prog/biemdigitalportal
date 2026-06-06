@@ -8,6 +8,9 @@ const requiredFiles = [
   'src/App.js',
   'src/App.jsx',
   'src/AdminApp.jsx',
+  'src/AuthApp.jsx',
+  'src/lib/auth.js',
+  'src/lib/supabase.js',
   'src/data/admin-data.js',
   'src/data/account-data.js',
   'src/icons.js',
@@ -20,7 +23,7 @@ const requiredFiles = [
 await Promise.all(requiredFiles.map(file => access(path.join(root, file))))
 
 const index = await readFile(path.join(root, 'index.html'), 'utf8')
-if (!index.includes('/src/main.js') || !index.includes('/src/styles.css') || !index.includes('/src/admin-styles.css')) {
+if (!index.includes('/src/main.js') || !index.includes('/src/styles.css') || !index.includes('/src/admin-styles.css') || !index.includes('/config.js')) {
   throw new Error('index.html must reference the compiled JavaScript and stylesheet')
 }
 

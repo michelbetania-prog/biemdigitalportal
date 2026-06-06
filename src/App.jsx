@@ -68,7 +68,7 @@ function StatusPill({ status }) {
   return <span className={`status-pill ${data.className}`}><span />{data.label}</span>
 }
 
-function Sidebar({ active, setActive, open, setOpen }) {
+function Sidebar({ active, setActive, open, setOpen, profile, onSignOut }) {
   return <aside className={`sidebar ${open ? 'open' : ''}`}>
     <div className="sidebar-head"><Logo /><button className="mobile-close" onClick={() => setOpen(false)} aria-label="Cerrar menú"><X size={20} /></button></div>
     <div className="client-switcher">
@@ -95,7 +95,7 @@ function Sidebar({ active, setActive, open, setOpen }) {
       <small>68% del plan completado</small>
     </div>
     <div className="sidebar-user">
-      <div className="user-avatar">MS</div><div><strong>María Santos</strong><span>Cliente</span></div><MoreHorizontal size={19} />
+      <div className="user-avatar">{(profile?.full_name || 'MS').slice(0,2).toUpperCase()}</div><div><strong>{profile?.full_name || 'Cliente'}</strong><span>Cliente</span></div><button className="client-signout" onClick={onSignOut}>Salir</button>
     </div>
   </aside>
 }
@@ -302,7 +302,7 @@ function Messages() {
   </div>
 }
 
-export default function App() {
+export default function App({ profile, onSignOut }) {
   const [active, setActive] = useState('summary')
   const [menuOpen, setMenuOpen] = useState(false)
   const [deliverables, setDeliverables] = useState(initialDeliverables)
@@ -315,5 +315,5 @@ export default function App() {
     messages: <Messages />,
     account: <AccountServices />,
   }
-  return <div className="app-shell"><Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} />{menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}<main><Topbar active={active} setMenuOpen={setMenuOpen} />{content[active]}</main></div>
+  return <div className="app-shell"><Sidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} profile={profile} onSignOut={onSignOut} />{menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} />}<main><Topbar active={active} setMenuOpen={setMenuOpen} />{content[active]}</main></div>
 }
