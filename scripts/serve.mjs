@@ -22,6 +22,11 @@ createServer(async (request, response) => {
     response.setHeader('Content-Type', types[path.extname(file)] || 'application/octet-stream')
     createReadStream(file).pipe(response)
   } catch {
+    if (!path.extname(pathname)) {
+      response.setHeader('Content-Type', 'text/html')
+      createReadStream(path.join(root, 'index.html')).pipe(response)
+      return
+    }
     response.writeHead(404).end('Not found')
   }
 }).listen(port, '0.0.0.0', () => console.log(`BIEM portal available at http://localhost:${port}`))

@@ -17,6 +17,8 @@
     "src/App.jsx",
     "src/icons.jsx",
     "src/mini-react.js",
-    "src/data/account-data.js"
+    "src/data/account-data.js",
+    "src/AdminApp.jsx",
+    "src/data/admin-data.js"
   ]
 }

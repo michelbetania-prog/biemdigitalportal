@@ -26,3 +26,10 @@ El repositorio actual no contiene ese archivo. Ese mensaje significa que el depl
 2. Elimina cualquier override que invoque `bash scripts/build.sh`.
 3. Guarda los comandos indicados arriba.
 4. Ejecuta **Redeploy** desactivando el build cache.
+
+## Rutas de la aplicación
+
+- Portal del cliente: `/cliente`
+- Panel privado del equipo: `/admin`
+
+Vercel redirige ambas rutas a la SPA mediante las reglas de `vercel.json`. La ruta `/admin` incluye una pantalla de acceso mock; debe conectarse a un proveedor de autenticación antes de producción.
