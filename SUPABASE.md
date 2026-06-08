@@ -2,11 +2,14 @@
 
 ## 1. Aplicar la migración
 
-La migración completa está en:
+Las migraciones principales están en:
 
 ```text
 supabase/migrations/202606060001_auth_roles_and_portal.sql
+supabase/migrations/202606080001_admin_crud_policies.sql
 ```
+
+La segunda migración refuerza las políticas CRUD administrativas para `clients`, `packages`, `invoices`, `deliverables`, `requests` y `extra_services`, usando `public.current_user_role()` como helper seguro basado en `public.profiles`.
 
 Con Supabase CLI:
 
@@ -83,9 +86,9 @@ Los roles `team` y `viewer` usan el dashboard operativo. `viewer` se presenta en
 
 ## 5. Matriz de acceso RLS
 
-- **admin:** lectura y escritura global.
-- **client:** lectura de filas cuyo `client_id` coincide con su perfil; puede crear solicitudes para su propia cuenta.
-- **team:** lectura de clientes y registros donde `assigned_to = auth.uid()`; puede actualizar entregables y solicitudes asignadas.
+- **admin:** lectura y escritura global en `clients`, `packages`, `invoices`, `deliverables`, `requests` y `extra_services`.
+- **client:** lectura de filas cuyo `client_id` coincide con su perfil; sin permisos de escritura en las tablas administrativas.
+- **team:** lectura de clientes y registros donde `assigned_to = auth.uid()`; no puede editar ni eliminar.
 - **viewer:** lectura global, sin políticas de escritura.
 
 Los paquetes asignados y servicios adicionales activos se pueden leer desde el portal cliente. Las facturas no pueden ser modificadas por clientes ni por viewers.
@@ -95,6 +98,8 @@ Los paquetes asignados y servicios adicionales activos se pueden leer desde el p
 Desde SQL:
 
 ```sql
+select public.current_user_role();
+-- o también:
 select public.get_current_user_role();
 ```
 
@@ -113,3 +118,23 @@ El frontend obtiene además el perfil completo mediante `profiles`, protegido po
 - Crea usuarios privilegiados mediante un backend/Edge Function con la secret key; nunca desde el navegador.
 - Prueba cada rol con usuarios separados antes de cargar datos reales.
 - Añade políticas de Storage equivalentes antes de subir archivos de entregables.
+
+
+## 8. SQL completo para reforzar CRUD admin
+
+Si ya aplicaste la migración inicial y quieres ejecutar únicamente la corrección de políticas CRUD, usa el archivo:
+
+```text
+supabase/migrations/202606080001_admin_crud_policies.sql
+```
+
+Ese SQL recrea las políticas de acceso para que solo `role = 'admin'` pueda hacer `insert`, `update` y `delete` en:
+
+- `clients`
+- `packages`
+- `invoices`
+- `deliverables`
+- `requests`
+- `extra_services`
+
+Los usuarios `viewer` y `client` no tienen políticas de actualización o eliminación. El frontend usa la publishable key y las políticas RLS como fuente final de autorización.

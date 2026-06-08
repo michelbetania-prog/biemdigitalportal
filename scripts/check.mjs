@@ -11,7 +11,7 @@ const requiredFiles = [
   'src/AuthApp.jsx',
   'src/lib/auth.js',
   'src/lib/supabase.js',
-  'src/data/admin-data.js',
+  'src/lib/admin-api.js',
   'src/data/account-data.js',
   'src/icons.js',
   'src/main.js',

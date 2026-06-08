@@ -4,6 +4,7 @@ let hookIndex = 0
 let rootNode = null
 let rootVNode = null
 let renderQueued = false
+let pendingEffects = []
 
 export function createElement(type, props, ...children) {
   return { type, props: props || {}, children: children.flat(Infinity) }
@@ -26,6 +27,21 @@ export function useState(initial) {
 export function useMemo(factory) {
   hookIndex++
   return factory()
+}
+
+export function useEffect(effect, dependencies = []) {
+  const key = `${currentInstance}:effect:${hookIndex++}`
+  const previous = stateStore.get(key)
+  const changed = !previous || dependencies.length !== previous.dependencies.length ||
+    dependencies.some((dependency, index) => dependency !== previous.dependencies[index])
+
+  if (changed) {
+    pendingEffects.push(() => {
+      previous?.cleanup?.()
+      const cleanup = effect()
+      stateStore.set(key, { dependencies, cleanup })
+    })
+  }
 }
 
 function queueRender() {
@@ -89,8 +105,12 @@ function renderRoot() {
   const selection = active && 'selectionStart' in active ? [active.selectionStart, active.selectionEnd] : null
   currentInstance = 'root'
   hookIndex = 0
+  pendingEffects = []
   const next = build(rootVNode)
   rootNode.replaceChildren(next)
+  const effects = pendingEffects
+  pendingEffects = []
+  effects.forEach(run => queueMicrotask(run))
   if (activeId) {
     const replacement = rootNode.querySelector(`[data-focus-id="${activeId}"]`)
     if (replacement) {

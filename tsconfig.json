@@ -19,10 +19,10 @@
     "src/mini-react.js",
     "src/data/account-data.js",
     "src/AdminApp.jsx",
-    "src/data/admin-data.js",
     "src/AuthApp.jsx",
     "src/lib/auth.js",
     "src/lib/supabase.js",
-    "src/types/supabase.d.ts"
+    "src/types/supabase.d.ts",
+    "src/lib/admin-api.js"
   ]
 }
