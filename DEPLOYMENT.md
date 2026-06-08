@@ -27,12 +27,20 @@ El repositorio actual no contiene ese archivo. Ese mensaje significa que el depl
 3. Guarda los comandos indicados arriba.
 4. Ejecuta **Redeploy** desactivando el build cache.
 
-## Rutas de la aplicación
+## Rutas de la aplicación y fallback SPA
 
+- Inicio de sesión: `/login`
+- Dashboard autenticado: `/dashboard`
 - Portal del cliente: `/cliente`
 - Panel privado del equipo: `/admin`
 
-Vercel redirige ambas rutas a la SPA mediante las reglas de `vercel.json`. La ruta `/admin` incluye una pantalla de acceso mock; debe conectarse a un proveedor de autenticación antes de producción.
+La aplicación usa routing en el navegador. `vercel.json` contiene un único rewrite global de `/(.*)` a `/index.html`, por lo que entrar o refrescar directamente cualquiera de estas rutas devuelve el entrypoint de la SPA. Los archivos reales de `dist`, como `/src/main.js` y `/config.js`, continúan sirviéndose como assets estáticos.
+
+Puedes validar el output y el rewrite antes de desplegar con:
+
+```bash
+npm run check:spa
+```
 
 ## Supabase Auth
 

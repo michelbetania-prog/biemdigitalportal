@@ -3,30 +3,9 @@
   "buildCommand": "npm run build",
   "installCommand": "npm ci --include=dev",
   "outputDirectory": "dist",
-  "cleanUrls": true,
   "rewrites": [
     {
-      "source": "/login",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/admin",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/admin/:path*",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/cliente",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/cliente/:path*",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
