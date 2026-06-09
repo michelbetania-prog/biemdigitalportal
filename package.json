@@ -1,0 +1,20 @@
+{
+  "name": "biem-client-portal",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/build.mjs",
+    "check": "tsc --noEmit && node scripts/check.mjs && node scripts/check-supabase.mjs && node scripts/check-admin-crud.mjs && node scripts/check-confidentiality.mjs",
+    "dev": "npm run build && node scripts/serve.mjs",
+    "preview": "node scripts/serve.mjs",
+    "check:spa": "npm run build && node scripts/check-spa.mjs"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}
