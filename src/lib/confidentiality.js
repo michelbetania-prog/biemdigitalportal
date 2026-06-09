@@ -19,7 +19,7 @@ export async function getConfidentialityStatus(profile) {
 
   const [{ data: agreement, error: agreementError }, { data: client, error: clientError }] = await Promise.all([
     supabase.from('confidentiality_agreements').select('id,version,title,content,is_active,updated_at').eq('is_active', true).maybeSingle(),
-    supabase.from('clients').select('id,name,brand_name,onboarding_type,onboarding_completed').eq('id', profile.client_id).single(),
+    supabase.rpc('client_account_overview').single(),
   ])
   if (agreementError) throw new Error(message(agreementError, 'No se pudo cargar el compromiso de confidencialidad.'))
   if (clientError) throw new Error(message(clientError, 'No se pudo cargar la configuración del cliente.'))

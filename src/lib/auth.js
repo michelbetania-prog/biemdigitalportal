@@ -35,9 +35,17 @@ export async function signOut() {
   window.location.assign('/login')
 }
 
+export const teamRoleRoutes = {
+  account_manager: '/team/account-manager',
+  designer: '/team/designer',
+  social_media: '/team/social-media',
+  video_editor: '/team/video-editor',
+}
+
 export function destinationForRole(role) {
-  if (role === 'admin') return '/admin'
+  if (role === 'admin') return '/admin/dashboard'
   if (role === 'client') return '/client/dashboard'
+  if (teamRoleRoutes[role]) return teamRoleRoutes[role]
   return '/dashboard'
 }
 

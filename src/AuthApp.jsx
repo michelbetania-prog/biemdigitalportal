@@ -4,7 +4,8 @@ import App from './App.jsx'
 import AdminApp from './AdminApp.jsx'
 import ClientSetupScreen from './ClientSetupScreen.jsx'
 import FirstLoginConfidentialityScreen from './FirstLoginConfidentialityScreen.jsx'
-import { destinationForRole, getAuthContext, signInWithPassword, signOut, subscribeToAuthChanges } from './lib/auth.js'
+import TeamApp from './TeamApp.jsx'
+import { destinationForRole, getAuthContext, signInWithPassword, signOut, subscribeToAuthChanges, teamRoleRoutes } from './lib/auth.js'
 import { supabase } from './lib/supabase.js'
 
 let authRequest
@@ -24,7 +25,7 @@ function ConfigurationScreen() {
 }
 
 function AccessDenied({ profile }) {
-  return <div className="auth-state-screen"><div className="auth-state-card denied"><Lock size={26}/><span>ACCESO RESTRINGIDO</span><h1>Esta sección requiere rol admin.</h1><p>Tu sesión está activa como <strong>{profile.role}</strong>. Las políticas RLS también impiden acceder a información fuera de tus permisos.</p><button className="admin-primary" onClick={() => navigate('/dashboard')}>Volver al dashboard</button><button className="auth-link" onClick={signOut}>Cerrar sesión</button></div></div>
+  return <div className="auth-state-screen"><div className="auth-state-card denied"><Lock size={26}/><span>ACCESO RESTRINGIDO</span><h1>Esta sección no está disponible para tu rol.</h1><p>Tu sesión está activa como <strong>{profile.role}</strong>. Las políticas RLS también impiden acceder a información fuera de tus permisos.</p><button className="admin-primary" onClick={() => navigate(destinationForRole(profile.role))}>Volver a mi espacio</button><button className="auth-link" onClick={signOut}>Cerrar sesión</button></div></div>
 }
 
 function LoginPage({ context }) {
@@ -107,6 +108,12 @@ export default function AuthApp() {
     return <AdminApp profile={context.profile} onSignOut={signOut} />
   }
 
+  const teamRoute = teamRoleRoutes[context.profile.role]
+  if (path.startsWith('/team')) {
+    if (!teamRoute || path !== teamRoute) return <AccessDenied profile={context.profile} />
+    return <TeamApp profile={context.profile} onSignOut={signOut}/>
+  }
+
   const clientPortal = child => context.profile.role === 'client'
     ? <FirstLoginConfidentialityScreen profile={context.profile}>{child}</FirstLoginConfidentialityScreen>
     : child
@@ -128,11 +135,14 @@ export default function AuthApp() {
 
   if (path === '/dashboard' || path === '/') {
     if (context.profile.role === 'client') return clientPortal(<App profile={context.profile} onSignOut={signOut}/>)
-    return <AdminApp profile={context.profile} onSignOut={signOut} />
+    if (context.profile.role === 'admin') return <AdminApp profile={context.profile} onSignOut={signOut}/>
+    if (teamRoute) { queueMicrotask(()=>navigate(teamRoute,true)); return <LoadingScreen/> }
+    return <AccessDenied profile={context.profile}/>
   }
 
   window.history.replaceState({}, '', '/dashboard')
-  return context.profile.role === 'client'
-    ? clientPortal(<App profile={context.profile} onSignOut={signOut}/>)
-    : <AdminApp profile={context.profile} onSignOut={signOut} />
+  if (context.profile.role === 'client') return clientPortal(<App profile={context.profile} onSignOut={signOut}/>)
+  if (context.profile.role === 'admin') return <AdminApp profile={context.profile} onSignOut={signOut}/>
+  if (teamRoute) { queueMicrotask(()=>navigate(teamRoute,true)); return <LoadingScreen/> }
+  return <AccessDenied profile={context.profile}/>
 }

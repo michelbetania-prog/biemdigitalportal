@@ -8,6 +8,10 @@ const selects = {
   requests: '*, clients(id,brand_name), extra_services(id,name)',
   extra_services: '*',
   profiles: 'id,full_name,email,role,client_id,created_at',
+  client_team_assignments: '*, clients(id,brand_name), profiles!client_team_assignments_user_id_fkey(id,full_name,email,role)',
+  internal_tasks: '*, clients(id,brand_name), profiles!internal_tasks_assigned_to_fkey(id,full_name,email,role)',
+  internal_notes: '*, clients(id,brand_name), profiles!internal_notes_created_by_fkey(id,full_name,email,role)',
+  client_resources: '*, clients(id,brand_name)',
 }
 
 const ordering = {
@@ -18,6 +22,12 @@ const ordering = {
   requests: ['created_at', false],
   extra_services: ['name', true],
   profiles: ['full_name', true],
+  client_team_assignments: ['created_at', false],
+  internal_tasks: ['due_date', true],
+  internal_notes: ['created_at', false],
+  client_resources: ['updated_at', false],
+  confidentiality_agreements: ['created_at', false],
+  client_confidentiality_acceptances: ['accepted_at', false],
 }
 
 function assertClient() {
@@ -86,7 +96,7 @@ export async function deleteRecord(resource, id) {
 }
 
 export async function loadAdminWorkspace() {
-  const resources = ['clients', 'packages', 'invoices', 'deliverables', 'requests', 'extra_services', 'profiles']
+  const resources = ['clients', 'packages', 'invoices', 'deliverables', 'requests', 'extra_services', 'profiles', 'client_team_assignments', 'internal_tasks', 'internal_notes', 'client_resources', 'confidentiality_agreements', 'client_confidentiality_acceptances']
   const entries = await Promise.all(resources.map(async resource => [resource, await listRecords(resource)]))
   const workspace = Object.fromEntries(entries)
   const profileById = new Map(workspace.profiles.map(profile => [profile.id, profile]))
@@ -116,4 +126,14 @@ export async function activateConfidentialityAgreement(id) {
   await assertAdminMutation()
   const { error } = await supabase.rpc('activate_confidentiality_agreement', { p_agreement_id:id })
   if (error) throw new Error(readableError(error))
+}
+
+
+export async function inviteTeamMember(payload) {
+  assertClient()
+  await assertAdminMutation()
+  const { data, error } = await supabase.functions.invoke('invite-team-member', { body:payload })
+  if (error) throw new Error(error.message || 'No se pudo invitar al colaborador.')
+  if (data?.error) throw new Error(data.error)
+  return data
 }

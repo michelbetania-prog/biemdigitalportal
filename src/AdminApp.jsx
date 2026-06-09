@@ -6,7 +6,7 @@ import {
   Menu, MessageCircle, MoreHorizontal, Package, Palette, Plus, Receipt, Search,
   Send, Settings, Shield, Sparkles, UserRound, Users, X
 } from './icons.jsx'
-import { activateConfidentialityAgreement, createRecord, deleteRecord, loadAdminWorkspace, loadConfidentialityAdmin, updateRecord } from './lib/admin-api.js'
+import { activateConfidentialityAgreement, createRecord, deleteRecord, loadAdminWorkspace, loadConfidentialityAdmin, updateRecord, inviteTeamMember } from './lib/admin-api.js'
 
 const adminNav = [
   { id:'dashboard', label:'Dashboard', icon:LayoutDashboard },
@@ -19,14 +19,16 @@ const adminNav = [
   { id:'services', label:'Servicios adicionales', icon:Briefcase },
   { id:'reports', label:'Reportes', icon:FileBarChart },
   { id:'team', label:'Equipo', icon:UserRound },
+  { id:'assignments', label:'Asignaciones', icon:Users },
+  { id:'tasks', label:'Tareas internas', icon:CheckCircle2 },
+  { id:'notes', label:'Notas internas', icon:FileText },
+  { id:'resources', label:'Estrategia y materiales', icon:Briefcase },
   { id:'confidentiality', label:'Confidencialidad', icon:Shield },
   { id:'settings', label:'Configuración', icon:Settings },
 ]
 
 const rolePermissions = {
   admin: adminNav.map(item => item.id),
-  team: ['dashboard','clients','deliverables','calendar','requests'],
-  viewer: adminNav.map(item => item.id).filter(id => !['settings','confidentiality'].includes(id)),
   client: [],
 }
 
@@ -35,11 +37,11 @@ const labels = {
   in_progress:'En proceso', internal_review:'Revisión interna', client_review:'Enviado al cliente',
   changes_requested:'Cambios solicitados', approved:'Aprobado', published:'Publicado', cancelled:'Cancelado',
   new:'Nueva', in_review:'En revisión', rejected:'Rechazada', converted:'Convertida', completed:'Completada',
-  high:'Alta', medium:'Media', low:'Baja', admin:'Admin', client:'Cliente', team:'Equipo', viewer:'Viewer',
+  high:'Alta', medium:'Media', low:'Baja', admin:'Admin', client:'Cliente', viewer:'Viewer', account_manager:'Agente de cuenta', designer:'Diseño gráfico', social_media:'Social media', video_editor:'Editor de video', ready_for_review:'Listo para revisión', corrected:'Corregido',
 }
 
 const emptyWorkspace = {
-  clients:[], packages:[], invoices:[], deliverables:[], requests:[], extra_services:[], profiles:[],
+  clients:[], packages:[], invoices:[], deliverables:[], requests:[], extra_services:[], profiles:[], client_team_assignments:[], internal_tasks:[], internal_notes:[], client_resources:[], confidentiality_agreements:[], client_confidentiality_acceptances:[],
 }
 
 function initials(value='BI') {
@@ -163,7 +165,8 @@ const formConfigs = {
       ['client_id','Cliente','clients',true],['assigned_to','Responsable','profiles'],['name','Nombre','text',true],['content_type','Tipo de contenido','text',true],
       ['description','Descripción','textarea'],['status','Estado','select',true,['pending','in_progress','internal_review','client_review','changes_requested','approved','published','cancelled']],
       ['priority','Prioridad','select',true,['low','medium','high']],['due_date','Fecha límite','date'],['scheduled_at','Fecha programada','datetime-local'],
-      ['file_url','Archivo o enlace','url'],['internal_comments','Comentarios internos','textarea'],['client_comments','Comentarios para cliente','textarea'],
+      ['file_url','Archivo o enlace','url'],['publication_url','Enlace publicado','url'],['internal_comments','Comentarios internos','textarea'],['client_comments','Comentarios para cliente','textarea'],
+      ['visible_to_client','Visible para cliente','checkbox'],['visible_to_account_manager','Visible para agente','checkbox'],['visible_to_designer','Visible para diseño','checkbox'],['visible_to_social_media','Visible para social media','checkbox'],['visible_to_video_editor','Visible para video','checkbox'],['internal_only','Solo interno','checkbox'],
     ],
   },
   requests: {
@@ -179,6 +182,26 @@ const formConfigs = {
       ['description','Descripción','textarea'],['price_from','Precio desde','number',true],['estimated_delivery','Tiempo estimado','text'],['is_active','Visible en portal','checkbox'],
     ],
   },
+  client_team_assignments: {
+    title:'asignación', fields:[
+      ['client_id','Cliente','clients',true],['user_id','Colaborador','staff_profiles',true],['role_on_client','Rol en cliente','select',true,['account_manager','designer','social_media','video_editor']],['is_active','Asignación activa','checkbox'],
+    ],
+  },
+  internal_tasks: {
+    title:'tarea interna', fields:[
+      ['client_id','Cliente','clients',true],['assigned_to','Responsable','profiles'],['task_type','Tipo','select',true,['design','video','copy','social_media','strategy','review','administration']],['title','Título','text',true],['description','Descripción','textarea'],['status','Estado','select',true,['pending','in_progress','ready_for_review','changes_requested','corrected','completed','paused']],['priority','Prioridad','select',true,['low','medium','high']],['due_date','Fecha límite','date'],['result_url','Resultado o enlace','url'],['internal_comment','Comentario interno','textarea'],['visible_to_client','Visible para cliente','checkbox'],['visible_to_account_manager','Visible para agente','checkbox'],['visible_to_designer','Visible para diseño','checkbox'],['visible_to_social_media','Visible para social media','checkbox'],['visible_to_video_editor','Visible para video','checkbox'],['internal_only','Solo interno','checkbox'],
+    ],
+  },
+  internal_notes: {
+    title:'nota interna', fields:[
+      ['client_id','Cliente','clients',true],['note','Nota','textarea',true],['visibility','Visibilidad','select',true,['admin_only','admin_and_account_manager','assigned_team','specific_role']],['specific_role','Rol específico','select',false,['account_manager','designer','social_media','video_editor']],
+    ],
+  },
+  client_resources: {
+    title:'recurso', fields:[
+      ['client_id','Cliente','clients',true],['resource_type','Tipo','select',true,['recommendation','diagnostic','growth_route','brand_material','brief','comment','next_step']],['title','Título','text',true],['content','Contenido','textarea'],['file_url','Archivo o enlace','url'],['status','Estado','select',true,['draft','in_review','published','archived']],['visible_to_client','Visible para cliente','checkbox'],['visible_to_account_manager','Visible para agente','checkbox'],['visible_to_designer','Visible para diseño','checkbox'],['visible_to_social_media','Visible para social media','checkbox'],['visible_to_video_editor','Visible para video','checkbox'],['internal_only','Solo interno','checkbox'],
+    ],
+  },
   confidentiality_agreements: {
     title:'compromiso', fields:[
       ['version','Versión','text',true],['title','Título','text',true],['content','Contenido del compromiso','textarea',true],
@@ -191,7 +214,8 @@ const categoryLabels = { strategy_growth:'Estrategia y crecimiento', content_des
 function relationOptions(type, data) {
   if(type==='clients') return data.clients.map(item=>[item.id,item.brand_name])
   if(type==='packages') return data.packages.map(item=>[item.id,item.name])
-  if(type==='profiles') return data.profiles.filter(item=>['admin','team'].includes(item.role)).map(item=>[item.id,item.full_name||item.email])
+  if(type==='profiles') return data.profiles.filter(item=>['admin','account_manager','designer','social_media','video_editor'].includes(item.role)).map(item=>[item.id,item.full_name||item.email])
+  if(type==='staff_profiles') return data.profiles.filter(item=>['account_manager','designer','social_media','video_editor'].includes(item.role)).map(item=>[item.id,`${item.full_name||item.email} · ${labels[item.role]}`])
   if(type==='extra_services') return data.extra_services.map(item=>[item.id,item.name])
   return []
 }
@@ -213,6 +237,9 @@ const createDefaults = {
   invoices: { amount:0, currency:'USD', status:'pending' },
   deliverables: { status:'pending', priority:'medium' },
   requests: { status:'new', priority:'medium' },
+  internal_tasks: { status:'pending', priority:'medium', visible_to_account_manager:true, internal_only:true },
+  client_team_assignments: { is_active:true },
+  client_resources: { status:'draft', visible_to_account_manager:true, internal_only:true },
   extra_services: { price_from:0, is_active:true },
 }
 
@@ -226,7 +253,7 @@ function payloadFromForm(resource, form) {
   const fieldLabels=Object.fromEntries(config.fields.map(([name,label])=>[name,label]))
   const formData=new FormData(form)
   const payload={}
-  const booleans=new Set(['includes_monthly_report','is_active'])
+  const booleans=new Set(['includes_monthly_report','is_active','visible_to_client','visible_to_admin','visible_to_account_manager','visible_to_designer','visible_to_social_media','visible_to_video_editor','internal_only'])
   for(const [name,,type] of config.fields){
     if(booleans.has(name)){ payload[name]=formData.get(name)==='on'; continue }
     let value=formData.get(name)
@@ -262,9 +289,9 @@ function CrudModal({ resource, record, data, onClose, onSave, error, saving }) {
   return <div className="modal-backdrop" onMouseDown={onClose}><form className="crud-modal" onSubmit={submit} onMouseDown={event=>event.stopPropagation()}><header><div><span className="admin-eyebrow">{editing?'EDITAR':'CREAR'}</span><h2>{editing?'Editar':'Nuevo'} {config.title}</h2><p>Los cambios se guardarán directamente en Supabase.</p></div><button type="button" onClick={onClose}><X size={19}/></button></header><div className="crud-form-grid">{config.fields.map(([name,label,type,required,values])=>{
     const value=normalizeValue(name,initialFieldValue(resource,record,name))
     if(type==='textarea'||type==='lines') return <label className="span-two" key={name}>{label}<textarea name={name} value={value}/></label>
-    if(type==='checkbox') return <label className="crud-checkbox span-two" key={name}><input type="checkbox" name={name} checked={record ? Boolean(record[name]) : true}/><span><strong>{label}</strong><small>Activa o desactiva esta opción.</small></span></label>
+    if(type==='checkbox') return <label className="crud-checkbox span-two" key={name}><input type="checkbox" name={name} checked={record ? Boolean(record[name]) : !['visible_to_client','visible_to_designer','visible_to_social_media','visible_to_video_editor'].includes(name)}/><span><strong>{label}</strong><small>Activa o desactiva esta opción.</small></span></label>
     if(type==='select') return <label key={name}>{label}<select name={name} required={required}>{values.map(option=><option value={option} selected={value===option} key={option}>{categoryLabels[option]||labels[option]||option}</option>)}</select></label>
-    if(['clients','packages','profiles','extra_services'].includes(type)) return <label key={name}>{label}<select name={name} required={required}><option value="">Sin asignar</option>{relationOptions(type,data).map(([id,text])=><option value={id} selected={value===id} key={id}>{text}</option>)}</select></label>
+    if(['clients','packages','profiles','staff_profiles','extra_services'].includes(type)) return <label key={name}>{label}<select name={name} required={required}><option value="">Sin asignar</option>{relationOptions(type,data).map(([id,text])=><option value={id} selected={value===id} key={id}>{text}</option>)}</select></label>
     return <label key={name}>{label}<input name={name} type={type} value={value} required={required} min={nonNegativeFields.has(name)?'0':undefined} step={integerFields.has(name)?'1':type==='number'?'0.01':undefined} inputMode={type==='number'?'decimal':undefined}/></label>
   })}</div>{error&&<div className="data-feedback error modal-error"><AlertTriangle size={16}/>{error}</div>}<footer><button type="button" className="admin-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" className="admin-primary" disabled={saving}>{saving?'Guardando en Supabase...':editing?'Guardar cambios':'Crear registro'}</button></footer></form></div>
 }
@@ -306,12 +333,13 @@ function Dashboard({ workspace, setActive, profile }) {
   const approved=data.deliverables.filter(item=>item.status==='approved').length
   const pendingInvoices=data.invoices.filter(item=>item.status==='pending').length
   const newRequests=data.requests.filter(item=>item.status==='new').length
-  const now=Date.now(), inThirty=now+30*86400000
-  const renewals=data.clients.filter(item=>{const time=new Date(item.renewal_date).getTime();return time>=now&&time<=inThirty}).length
-  const overdueClients=new Set(data.invoices.filter(item=>item.status==='overdue').map(item=>item.client_id)).size
+  const activeAgreement=data.confidentiality_agreements.find(item=>item.is_active)
+  const acceptedClients=new Set(data.client_confidentiality_acceptances.filter(item=>item.agreement_id===activeAgreement?.id&&item.agreement_version===activeAgreement?.version).map(item=>item.client_id))
+  const confidentialityPending=activeAgreement?data.clients.filter(item=>!acceptedClients.has(item.id)).length:0
+  const onboardingPending=data.clients.filter(item=>!item.onboarding_completed).length
   const cards=[
-    ['Clientes activos',activeClients,'Cuentas en servicio',Users,'green'],['Entregables pendientes',pending,'Pendiente o en proceso',Clock3,'amber'],['Por revisar',review,'Interno o cliente',Eye,'lilac'],['Aprobados',approved,'Listos para publicar',CheckCircle2,'blue'],
-    ['Facturas pendientes',pendingInvoices,'Por cobrar',Receipt,'coral'],['Solicitudes nuevas',newRequests,'Requieren respuesta',MessageCircle,'lilac'],['Próximas renovaciones',renewals,'En 30 días',CalendarDays,'green'],['Clientes en riesgo',overdueClients,'Con facturas vencidas',AlertTriangle,'coral'],
+    ['Clientes activos',activeClients,'Cuentas en servicio',Users,'green'],['Entregables pendientes',pending,'Pendiente o en proceso',Clock3,'amber'],['Por revisar',review,'Interno o cliente',Eye,'lilac'],['Tareas abiertas',data.internal_tasks.filter(item=>!['completed','paused'].includes(item.status)).length,'Trabajo del equipo',CheckCircle2,'blue'],
+    ['Facturas pendientes',pendingInvoices,'Por cobrar',Receipt,'coral'],['Solicitudes nuevas',newRequests,'Requieren respuesta',MessageCircle,'lilac'],['Confidencialidad pendiente',confidentialityPending,'Versión activa',Shield,'green'],['Onboarding pendiente',onboardingPending,'Nuevos o actualización',AlertTriangle,'coral'],
   ]
   const activity=[
     ...data.requests.slice(0,3).map(item=>({id:`r-${item.id}`,title:item.clients?.brand_name||'Cliente',text:`solicitó ${item.request_type}`,time:formatDate(item.created_at),icon:MessageCircle})),
@@ -353,13 +381,30 @@ const serviceColumns=[
   {key:'price_from',label:'Precio desde',render:item=>formatMoney(item.price_from)},{key:'estimated_delivery',label:'Entrega'},{key:'is_active',label:'Estado',render:item=><Badge value={item.is_active?'active':'paused'}/>},
 ]
 
+
+const assignmentColumns=[
+  {key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},{key:'user',label:'Colaborador',render:item=>item.profiles?.full_name||item.profiles?.email||'—'},{key:'role_on_client',label:'Rol',render:item=>labels[item.role_on_client]},{key:'is_active',label:'Estado',render:item=><Badge value={item.is_active?'active':'paused'}/>},
+]
+const taskColumns=[
+  {key:'title',label:'Tarea',render:item=><strong>{item.title}</strong>},{key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},{key:'assigned_to',label:'Responsable',render:item=>item.profiles?.full_name||'Sin asignar'},{key:'task_type',label:'Tipo'},{key:'due_date',label:'Fecha límite',render:item=>formatDate(item.due_date)},{key:'status',label:'Estado',render:item=><Badge value={item.status}/>},
+]
+const noteColumns=[
+  {key:'note',label:'Nota',render:item=><div><strong>{item.note?.slice(0,70)}</strong></div>},{key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},{key:'author',label:'Creó',render:item=>item.profiles?.full_name||'Admin'},{key:'visibility',label:'Visibilidad'},{key:'created_at',label:'Fecha',render:item=>formatDate(item.created_at)},
+]
+const resourceColumns=[
+  {key:'title',label:'Recurso',render:item=><strong>{item.title}</strong>},{key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},{key:'resource_type',label:'Tipo'},{key:'status',label:'Estado',render:item=><Badge value={item.status}/>},{key:'visible_to_client',label:'Cliente',render:item=>item.visible_to_client&&!item.internal_only?'Visible':'Interno'},
+]
+
 function CalendarPage({ workspace }) {
   const grouped=useMemo(()=>workspace.data.deliverables.reduce((acc,item)=>{const key=item.scheduled_at?.slice(0,10)||item.due_date||'Sin fecha';(acc[key]||=[]).push(item);return acc},{}),[workspace.data.deliverables])
   return <div className="admin-page"><AdminHeading eyebrow="PROGRAMACIÓN REAL" title="Calendario" copy="Entregables agrupados por la fecha almacenada en Supabase."/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><div className="real-calendar-list">{Object.entries(grouped).sort(([a],[b])=>a.localeCompare(b)).map(([date,items])=><section key={date}><div className="real-calendar-date"><CalendarDays size={17}/><strong>{formatDate(date)}</strong><span>{items.length} pieza{items.length!==1?'s':''}</span></div><div>{items.map(item=><article key={item.id}><div><span>{item.clients?.brand_name}</span><strong>{item.name}</strong><small>{item.content_type} · {item.assignee?.full_name||'Sin asignar'}</small></div><Badge value={item.status}/></article>)}</div></section>)}{!workspace.loading&&!Object.keys(grouped).length&&<div className="empty-table"><CalendarDays size={28}/><strong>No hay entregables programados</strong></div>}</div></div>
 }
 
 function TeamPage({ workspace }) {
-  return <div className="admin-page"><AdminHeading eyebrow="USUARIOS REALES" title="Equipo" copy="Perfiles registrados en Supabase Auth y public.profiles."/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><div className="team-admin-grid">{workspace.data.profiles.map(member=><article key={member.id}><header><div className="team-avatar large">{initials(member.full_name||member.email)}</div><Badge value="active"/></header><h3>{member.full_name||'Sin nombre'}</h3><p>{member.email}</p><span className="role-label">{labels[member.role]}</span><footer><span className="muted-cell">Creado {formatDate(member.created_at)}</span></footer></article>)}</div></div>
+  const roles=['admin','client','account_manager','designer','social_media','video_editor','viewer']
+  const changeRole=(member,role)=>workspace.mutate(()=>updateRecord('profiles',member.id,{role}),`Rol de ${member.full_name||member.email} actualizado.`)
+  const invite=async()=>{const full_name=window.prompt('Nombre completo del colaborador');if(!full_name)return;const email=window.prompt('Correo del colaborador');if(!email)return;const role=window.prompt('Rol: account_manager, designer, social_media o video_editor','designer');if(!role)return;await workspace.mutate(()=>inviteTeamMember({full_name,email,role}),`Invitación enviada a ${email}.`)}
+  return <div className="admin-page"><AdminHeading eyebrow="USUARIOS REALES" title="Equipo" copy="Asigna el rol principal aquí y vincula colaboradores a clientes desde Asignaciones." action={<button className="admin-primary" onClick={invite}><Plus size={16}/>Invitar colaborador</button>}/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><div className="team-admin-grid">{workspace.data.profiles.map(member=><article key={member.id}><header><div className="team-avatar large">{initials(member.full_name||member.email)}</div><Badge value="active"/></header><h3>{member.full_name||'Sin nombre'}</h3><p>{member.email}</p><label className="team-role-editor">Rol<select value={member.role} onChange={event=>changeRole(member,event.target.value)}>{roles.map(role=><option value={role} key={role}>{labels[role]}</option>)}</select></label><footer><span className="muted-cell">Creado {formatDate(member.created_at)}</span></footer></article>)}</div><div className="admin-empty compact"><Shield size={20}/><p>Las invitaciones se procesan mediante una Edge Function segura. El navegador nunca utiliza una service role key.</p></div></div>
 }
 
 function ConfidentialityAdminPage({ workspace }) {
@@ -419,7 +464,7 @@ export default function AdminApp({ profile, onSignOut }) {
     billing:<EntityTablePage {...pageProps} resource="invoices" title="Facturación" eyebrow="CONTROL FINANCIERO" copy="Gestiona facturas persistentes y su estado de pago." columns={invoiceColumns} filters={['Estado','Cliente']}/>,
     requests:<EntityTablePage {...pageProps} resource="requests" title="Solicitudes" eyebrow="PETICIONES DEL PORTAL" copy="Revisa y administra solicitudes reales de clientes." columns={requestColumns} filters={['Estado','Prioridad']}/>,
     services:<EntityTablePage {...pageProps} resource="extra_services" title="Servicios adicionales" eyebrow="CATÁLOGO REAL" copy="Configura los servicios visibles en el portal cliente." columns={serviceColumns}/>,
-    reports:<UnavailablePage title="Reportes"/>, team:<TeamPage {...pageProps}/>, confidentiality:<ConfidentialityAdminPage {...pageProps}/>, settings:<UnavailablePage title="Configuración"/>,
+    reports:<UnavailablePage title="Reportes"/>, team:<TeamPage {...pageProps}/>, assignments:<EntityTablePage {...pageProps} resource="client_team_assignments" title="Asignaciones" eyebrow="EQUIPO POR CLIENTE" copy="Asigna uno o varios colaboradores con un rol específico." columns={assignmentColumns}/>, tasks:<EntityTablePage {...pageProps} resource="internal_tasks" title="Tareas internas" eyebrow="OPERACIÓN" copy="Asigna y controla trabajo interno sin exponerlo al cliente." columns={taskColumns}/>, notes:<EntityTablePage {...pageProps} resource="internal_notes" title="Notas internas" eyebrow="CONTEXTO PRIVADO" copy="Notas con visibilidad por rol y equipo asignado." columns={noteColumns}/>, resources:<EntityTablePage {...pageProps} resource="client_resources" title="Estrategia y materiales" eyebrow="VISIBILIDAD CONTROLADA" copy="Diagnósticos, rutas, recomendaciones y materiales con permisos por rol." columns={resourceColumns}/>, confidentiality:<ConfidentialityAdminPage {...pageProps}/>, settings:<UnavailablePage title="Configuración"/>,
   }
   return <div className={`admin-shell ${workspace.canWrite?'':'read-only'}`}><AdminSidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} profile={profile} onLogout={onSignOut}/>{menuOpen&&<div className="admin-overlay" onClick={()=>setMenuOpen(false)}/>}<main className="admin-main"><AdminTopbar active={active} setMenuOpen={setMenuOpen} profile={profile} onRefresh={workspace.refresh}/>{!workspace.canWrite&&<div className="read-only-banner"><Eye size={14}/>Modo de solo lectura: los cambios están deshabilitados</div>}{pages[active]}</main></div>
 }

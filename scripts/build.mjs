@@ -18,7 +18,7 @@ await writeFile(path.join(output, 'config.js'), `globalThis.__BIEM_CONFIG__ = ${
 await cp(path.join(root, 'src', 'styles.css'), path.join(output, 'src', 'styles.css'))
 await cp(path.join(root, 'src', 'admin-styles.css'), path.join(output, 'src', 'admin-styles.css'))
 
-for (const asset of ['App.js', 'AdminApp.js', 'AuthApp.js', 'FirstLoginConfidentialityScreen.js', 'ClientSetupScreen.js', 'icons.js', 'main.js', 'mini-react.js', 'data/account-data.js', 'lib/auth.js', 'lib/supabase.js', 'lib/admin-api.js', 'lib/confidentiality.js']) {
+for (const asset of ['App.js', 'AdminApp.js', 'AuthApp.js', 'FirstLoginConfidentialityScreen.js', 'ClientSetupScreen.js', 'TeamApp.js', 'icons.js', 'main.js', 'mini-react.js', 'data/account-data.js', 'lib/auth.js', 'lib/supabase.js', 'lib/admin-api.js', 'lib/confidentiality.js', 'lib/team-api.js', 'lib/client-api.js']) {
   const source = await readFile(path.join(compiled, asset), 'utf8')
   const browserReady = source
     .replaceAll("'./App.jsx'", "'./App.js'")
@@ -27,6 +27,7 @@ for (const asset of ['App.js', 'AdminApp.js', 'AuthApp.js', 'FirstLoginConfident
     .replaceAll("'./AuthApp.jsx'", "'./AuthApp.js'")
     .replaceAll("'./FirstLoginConfidentialityScreen.jsx'", "'./FirstLoginConfidentialityScreen.js'")
     .replaceAll("'./ClientSetupScreen.jsx'", "'./ClientSetupScreen.js'")
+    .replaceAll("'./TeamApp.jsx'", "'./TeamApp.js'")
 
   await writeFile(path.join(output, 'src', asset), browserReady)
 }

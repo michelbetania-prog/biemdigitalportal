@@ -82,16 +82,16 @@ Los registros asignados al equipo deben guardar el UUID del usuario en `assigned
 | `/cliente` | `client` y `admin` |
 | `/admin` | Solo `admin` |
 
-Los roles `team` y `viewer` usan el dashboard operativo. `viewer` se presenta en modo de solo lectura. Las restricciones reales no dependen de la interfaz: PostgreSQL vuelve a validarlas en cada consulta mediante RLS.
+La migración operativa más reciente reemplaza el rol genérico `team` por roles especializados. Un perfil `viewer` no recibe acceso operativo hasta que un administrador le asigne uno de esos roles. Las restricciones reales no dependen de la interfaz: PostgreSQL vuelve a validarlas en cada consulta mediante RLS.
 
 ## 5. Matriz de acceso RLS
 
 - **admin:** lectura y escritura global en `clients`, `packages`, `invoices`, `deliverables`, `requests` y `extra_services`.
 - **client:** lectura de filas cuyo `client_id` coincide con su perfil; sin permisos de escritura en las tablas administrativas.
-- **team:** lectura de clientes y registros donde `assigned_to = auth.uid()`; no puede editar ni eliminar.
-- **viewer:** lectura global, sin políticas de escritura.
+- **Roles de equipo:** acceso limitado por `client_team_assignments`, visibilidad y tareas asignadas.
+- **viewer:** perfil pendiente de clasificación, sin acceso operativo en la política más reciente.
 
-Los paquetes asignados y servicios adicionales activos se pueden leer desde el portal cliente. Las facturas no pueden ser modificadas por clientes ni por viewers.
+Los paquetes asignados y servicios adicionales activos se exponen al cliente mediante funciones seguras. Las facturas no pueden ser modificadas por clientes ni colaboradores.
 
 ## 6. Función de rol
 
@@ -196,3 +196,66 @@ where id = 'UUID_DEL_CLIENTE';
 ```
 
 El administrador puede crear versiones, editar su texto, activar una nueva versión y consultar aceptaciones desde **Admin → Confidencialidad**. Al activar una versión nueva, los clientes que no tengan una aceptación para esa versión son bloqueados antes del dashboard.
+
+## 11. Roles operativos, asignaciones y permisos del equipo
+
+Aplica después de la migración de confidencialidad:
+
+```text
+supabase/migrations/202606090003_team_roles_permissions.sql
+```
+
+La migración reemplaza el rol genérico `team` por roles operativos y migra automáticamente los perfiles existentes con `role = 'team'` a `account_manager`:
+
+- `admin`
+- `client`
+- `account_manager`
+- `designer`
+- `social_media`
+- `video_editor`
+- `viewer` se conserva como estado heredado sin acceso a datos operativos hasta que un admin le asigne un rol válido.
+
+También crea:
+
+- `client_team_assignments`: relación muchos-a-muchos entre clientes y colaboradores.
+- `internal_tasks`: tareas asignables con estados, fechas, resultados y visibilidad.
+- `internal_notes`: notas que nunca son visibles para clientes.
+- `client_resources`: diagnósticos, recomendaciones, rutas de crecimiento, briefs y materiales con visibilidad por rol.
+
+### Flujo para configurar un colaborador
+
+1. Crea o invita el usuario desde Supabase Auth o mediante una Edge Function segura.
+2. En **Admin → Equipo**, cambia su perfil al rol operativo correspondiente.
+3. En **Admin → Asignaciones**, vincúlalo con uno o varios clientes. El rol de la asignación debe coincidir con el rol principal del perfil.
+4. Crea tareas desde **Admin → Tareas internas** o, para agentes de cuenta, desde su espacio de equipo.
+
+No se crea usuarios de Auth directamente desde el navegador porque eso requeriría una clave administrativa. Nunca agregues `SUPABASE_SERVICE_ROLE_KEY` a Vercel como variable pública ni al bundle del frontend.
+
+### Matriz de acceso aplicada por RLS
+
+- **Admin:** lectura y escritura total.
+- **Cliente:** solo su `client_id`, entregables y recursos visibles; nunca notas internas. Facturas únicamente propias.
+- **Agente de cuenta:** clientes asignados, solicitudes, entregables, tareas, notas permitidas y borradores estratégicos. Sin acceso a facturas mediante su dashboard ni a clientes no asignados.
+- **Diseño:** tareas propias, entregables/materiales de diseño permitidos y clientes asignados mediante la función de resumen seguro. Sin finanzas.
+- **Social media:** tareas propias, entregables/materiales permitidos y campos operativos de publicación. Sin finanzas.
+- **Editor de video:** tareas propias, entregables/materiales de video permitidos. Sin finanzas.
+
+Los datos básicos de clientes para colaboradores se entregan con `public.team_client_overview()`. Esta función no devuelve notas privadas, teléfono, email ni valores financieros. Las rutas del equipo son independientes de la vista cliente:
+
+```text
+/team/account-manager
+/team/designer
+/team/social-media
+/team/video-editor
+```
+
+### Desplegar invitaciones de colaboradores
+
+El botón **Admin → Equipo → Invitar colaborador** utiliza una Edge Function para que la `SUPABASE_SERVICE_ROLE_KEY` nunca llegue al navegador:
+
+```bash
+supabase secrets set SITE_URL=https://tu-portal.vercel.app
+supabase functions deploy invite-team-member
+```
+
+Supabase inyecta automáticamente `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` en la función alojada. El endpoint vuelve a validar que el usuario que invoca tenga `profiles.role = 'admin'` antes de enviar la invitación y asignar el rol.

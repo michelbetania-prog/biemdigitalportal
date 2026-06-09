@@ -27,6 +27,9 @@ const requiredAssets = [
   'src/AuthApp.js',
   'src/App.js',
   'src/AdminApp.js',
+  'src/TeamApp.js',
+  'src/lib/team-api.js',
+  'src/lib/client-api.js',
   'src/styles.css',
   'src/admin-styles.css',
 ]

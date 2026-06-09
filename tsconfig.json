@@ -26,6 +26,9 @@
     "src/lib/supabase.js",
     "src/types/supabase.d.ts",
     "src/lib/admin-api.js",
-    "src/lib/confidentiality.js"
+    "src/lib/confidentiality.js",
+    "src/TeamApp.jsx",
+    "src/lib/team-api.js",
+    "src/lib/client-api.js"
   ]
 }
