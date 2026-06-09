@@ -61,6 +61,7 @@ function useWorkspace() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [revision, setRevision] = useState(0)
+  const [mutating, setMutating] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -76,18 +77,23 @@ function useWorkspace() {
   const mutate = async (operation, successMessage) => {
     setError('')
     setNotice('')
+    setMutating(true)
     try {
       await operation()
       setNotice(successMessage)
       refresh()
-      return true
+      return { ok:true, error:'' }
     } catch (mutationError) {
-      setError(mutationError.message)
-      return false
+      const message=mutationError.message || 'No se pudo completar la operación en Supabase.'
+      console.error('[BIEM admin CRUD]', mutationError)
+      setError(message)
+      return { ok:false, error:message }
+    } finally {
+      setMutating(false)
     }
   }
 
-  return { data, loading, error, notice, setError, setNotice, refresh, mutate }
+  return { data, loading, mutating, error, notice, setError, setNotice, refresh, mutate }
 }
 
 function AdminLogo() {
@@ -191,36 +197,70 @@ function normalizeValue(field, value) {
   return value
 }
 
+const integerFields = new Set(['graphic_pieces','reels','stories','carousels','meetings','package_usage'])
+const decimalFields = new Set(['monthly_price','amount','price_from'])
+const nonNegativeFields = new Set([...integerFields, ...decimalFields])
+
+const createDefaults = {
+  clients: { status:'active', package_usage:0 },
+  packages: { monthly_price:0, graphic_pieces:0, reels:0, stories:0, carousels:0, meetings:0, includes_monthly_report:true, is_active:true },
+  invoices: { amount:0, currency:'USD', status:'pending' },
+  deliverables: { status:'pending', priority:'medium' },
+  requests: { status:'new', priority:'medium' },
+  extra_services: { price_from:0, is_active:true },
+}
+
+function initialFieldValue(resource, record, name) {
+  if (record?.id) return record[name]
+  return createDefaults[resource]?.[name]
+}
+
 function payloadFromForm(resource, form) {
   const config=formConfigs[resource]
+  const fieldLabels=Object.fromEntries(config.fields.map(([name,label])=>[name,label]))
   const formData=new FormData(form)
   const payload={}
-  const numeric=new Set(['monthly_price','graphic_pieces','reels','stories','carousels','meetings','package_usage','amount','price_from'])
   const booleans=new Set(['includes_monthly_report','is_active'])
   for(const [name,,type] of config.fields){
     if(booleans.has(name)){ payload[name]=formData.get(name)==='on'; continue }
     let value=formData.get(name)
     if(type==='lines'){ payload[name]=`${value||''}`.split('\n').map(item=>item.trim()).filter(Boolean); continue }
+    if(integerFields.has(name)){
+      const parsed=value===''||value===null ? 0 : Number(value)
+      if(!Number.isInteger(parsed)||parsed<0) throw new Error(`${fieldLabels[name]} debe ser un número entero mayor o igual a 0.`)
+      payload[name]=parsed
+      continue
+    }
+    if(decimalFields.has(name)){
+      const parsed=value===''||value===null ? 0 : Number(value)
+      if(!Number.isFinite(parsed)||parsed<0) throw new Error(`${fieldLabels[name]} debe ser un monto válido mayor o igual a 0.`)
+      payload[name]=parsed
+      continue
+    }
     if(value===''||value===null){ payload[name]=null; continue }
-    payload[name]=numeric.has(name)?Number(value):value
+    payload[name]=typeof value==='string' ? value.trim() : value
     if(name==='scheduled_at'&&value) payload[name]=new Date(value).toISOString()
   }
   if(resource==='invoices'&&!payload.currency) payload.currency='USD'
   return payload
 }
 
-function CrudModal({ resource, record, data, onClose, onSave }) {
+function CrudModal({ resource, record, data, onClose, onSave, error, saving }) {
   const config=formConfigs[resource]
   const editing=Boolean(record?.id)
-  const submit=event=>{event.preventDefault();onSave(payloadFromForm(resource,event.currentTarget))}
+  const submit=async event=>{
+    event.preventDefault()
+    try { await onSave(payloadFromForm(resource,event.currentTarget)) }
+    catch (validationError) { console.error('[BIEM form validation]', validationError); data.setFormError(validationError.message) }
+  }
   return <div className="modal-backdrop" onMouseDown={onClose}><form className="crud-modal" onSubmit={submit} onMouseDown={event=>event.stopPropagation()}><header><div><span className="admin-eyebrow">{editing?'EDITAR':'CREAR'}</span><h2>{editing?'Editar':'Nuevo'} {config.title}</h2><p>Los cambios se guardarán directamente en Supabase.</p></div><button type="button" onClick={onClose}><X size={19}/></button></header><div className="crud-form-grid">{config.fields.map(([name,label,type,required,values])=>{
-    const value=normalizeValue(name,record?.[name] ?? (name==='status' ? (resource==='requests'?'new':'active') : name==='priority'?'medium':name==='currency'?'USD':undefined))
+    const value=normalizeValue(name,initialFieldValue(resource,record,name))
     if(type==='textarea'||type==='lines') return <label className="span-two" key={name}>{label}<textarea name={name} value={value}/></label>
     if(type==='checkbox') return <label className="crud-checkbox span-two" key={name}><input type="checkbox" name={name} checked={record ? Boolean(record[name]) : true}/><span><strong>{label}</strong><small>Activa o desactiva esta opción.</small></span></label>
     if(type==='select') return <label key={name}>{label}<select name={name} required={required}>{values.map(option=><option value={option} selected={value===option} key={option}>{categoryLabels[option]||labels[option]||option}</option>)}</select></label>
     if(['clients','packages','profiles','extra_services'].includes(type)) return <label key={name}>{label}<select name={name} required={required}><option value="">Sin asignar</option>{relationOptions(type,data).map(([id,text])=><option value={id} selected={value===id} key={id}>{text}</option>)}</select></label>
-    return <label key={name}>{label}<input name={name} type={type} value={value} required={required} step={type==='number'?'0.01':undefined}/></label>
-  })}</div><footer><button type="button" className="admin-secondary" onClick={onClose}>Cancelar</button><button type="submit" className="admin-primary">{editing?'Guardar cambios':'Crear registro'}</button></footer></form></div>
+    return <label key={name}>{label}<input name={name} type={type} value={value} required={required} min={nonNegativeFields.has(name)?'0':undefined} step={integerFields.has(name)?'1':type==='number'?'0.01':undefined} inputMode={type==='number'?'decimal':undefined}/></label>
+  })}</div>{error&&<div className="data-feedback error modal-error"><AlertTriangle size={16}/>{error}</div>}<footer><button type="button" className="admin-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" className="admin-primary" disabled={saving}>{saving?'Guardando en Supabase...':editing?'Guardar cambios':'Crear registro'}</button></footer></form></div>
 }
 
 function RowActions({ canWrite, onEdit, onDelete }) {
@@ -232,20 +272,24 @@ function EntityTablePage({ resource, workspace, title, eyebrow, copy, columns, f
   const { data, mutate }=workspace
   const [editing,setEditing]=useState(null)
   const [deleting,setDeleting]=useState(null)
+  const [formError,setFormError]=useState('')
   const records=data[resource]||[]
   const canWrite=workspace.canWrite
   const save=async payload=>{
-    const ok=await mutate(
+    setFormError('')
+    workspace.setError('')
+    const result=await mutate(
       ()=>editing?.id?updateRecord(resource,editing.id,payload):createRecord(resource,payload),
       `${formConfigs[resource].title[0].toUpperCase()+formConfigs[resource].title.slice(1)} ${editing?.id?'actualizado':'creado'} correctamente.`,
     )
-    if(ok)setEditing(null)
+    if(result.ok)setEditing(null)
+    else setFormError(result.error)
   }
   const remove=async()=>{
-    const ok=await mutate(()=>deleteRecord(resource,deleting.id),`${formConfigs[resource].title} eliminado correctamente.`)
-    if(ok)setDeleting(null)
+    const result=await mutate(()=>deleteRecord(resource,deleting.id),`${formConfigs[resource].title} eliminado correctamente.`)
+    if(result.ok)setDeleting(null)
   }
-  return <div className="admin-page"><AdminHeading eyebrow={eyebrow} title={title} copy={copy} action={canWrite?<button className="admin-primary" onClick={()=>setEditing({})}><Plus size={16}/>Crear {formConfigs[resource].title}</button>:null}/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><Toolbar placeholder={`Buscar ${title.toLowerCase()}...`} filters={filters}/><div className="admin-table-wrap"><table className="admin-table"><thead><tr>{columns.map(column=><th key={column.key}>{column.label}</th>)}<th></th></tr></thead><tbody>{records.map(record=><tr key={record.id}>{columns.map(column=><td key={column.key}>{column.render?column.render(record):record[column.key]||'—'}</td>)}<td><RowActions canWrite={canWrite} onEdit={()=>setEditing(record)} onDelete={()=>setDeleting(record)}/></td></tr>)}{!workspace.loading&&records.length===0&&<tr><td colSpan={columns.length+1}><div className="empty-table"><FileText size={24}/><strong>No hay registros todavía</strong><span>Crea el primero para comenzar.</span></div></td></tr>}</tbody></table></div>{editing&&<CrudModal resource={resource} record={editing} data={data} onClose={()=>setEditing(null)} onSave={save}/>} {deleting&&<ConfirmDelete label={deleting.brand_name||deleting.name||deleting.invoice_number||deleting.request_type} onClose={()=>setDeleting(null)} onConfirm={remove}/>}</div>
+  return <div className="admin-page"><AdminHeading eyebrow={eyebrow} title={title} copy={copy} action={canWrite?<button className="admin-primary" onClick={()=>{setFormError('');setEditing({})}}><Plus size={16}/>Crear {formConfigs[resource].title}</button>:null}/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><Toolbar placeholder={`Buscar ${title.toLowerCase()}...`} filters={filters}/><div className="admin-table-wrap"><table className="admin-table"><thead><tr>{columns.map(column=><th key={column.key}>{column.label}</th>)}<th></th></tr></thead><tbody>{records.map(record=><tr key={record.id}>{columns.map(column=><td key={column.key}>{column.render?column.render(record):record[column.key]||'—'}</td>)}<td><RowActions canWrite={canWrite} onEdit={()=>{setFormError('');setEditing(record)}} onDelete={()=>setDeleting(record)}/></td></tr>)}{!workspace.loading&&records.length===0&&<tr><td colSpan={columns.length+1}><div className="empty-table"><FileText size={24}/><strong>No hay registros todavía</strong><span>Crea el primero para comenzar.</span></div></td></tr>}</tbody></table></div>{editing&&<CrudModal resource={resource} record={editing} data={{...data,setFormError}} onClose={()=>setEditing(null)} onSave={save} error={formError||workspace.error} saving={workspace.mutating}/>} {deleting&&<ConfirmDelete label={deleting.brand_name||deleting.name||deleting.invoice_number||deleting.request_type} onClose={()=>setDeleting(null)} onConfirm={remove}/>}</div>
 }
 
 function Dashboard({ workspace, setActive, profile }) {

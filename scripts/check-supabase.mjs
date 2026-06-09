@@ -1,9 +1,9 @@
 import { readFile } from 'node:fs/promises'
 
 const base = await readFile('supabase/migrations/202606060001_auth_roles_and_portal.sql', 'utf8')
-const adminCrud = await readFile('supabase/migrations/202606080001_admin_crud_policies.sql', 'utf8')
+const adminCrud = await readFile('supabase/migrations/202606090001_admin_full_crud_and_profile_policies.sql', 'utf8')
 const tables = ['profiles', 'clients', 'packages', 'invoices', 'deliverables', 'requests', 'extra_services']
-const crudTables = ['clients', 'packages', 'invoices', 'deliverables', 'requests', 'extra_services']
+const crudTables = ['profiles', 'clients', 'packages', 'invoices', 'deliverables', 'requests', 'extra_services']
 
 for (const table of tables) {
   if (!base.includes(`create table public.${table}`)) throw new Error(`Missing table: ${table}`)

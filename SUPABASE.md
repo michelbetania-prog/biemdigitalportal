@@ -138,3 +138,34 @@ Ese SQL recrea las políticas de acceso para que solo `role = 'admin'` pueda hac
 - `extra_services`
 
 Los usuarios `viewer` y `client` no tienen políticas de actualización o eliminación. El frontend usa la publishable key y las políticas RLS como fuente final de autorización.
+
+## 9. Corrección de CRUD administrativo (9 de junio de 2026)
+
+Para habilitar CRUD completo de administradores, incluida la tabla `profiles`, aplica después de la migración inicial:
+
+```text
+supabase/migrations/202606090001_admin_full_crud_and_profile_policies.sql
+```
+
+La migración mantiene RLS activo, concede privilegios del Data API a usuarios autenticados y deja que las políticas autoricen las operaciones. Solo un usuario cuyo registro en `public.profiles` tenga `role = 'admin'` puede insertar, actualizar o eliminar.
+
+Verifica el rol del usuario desde SQL Editor reemplazando el correo:
+
+```sql
+select u.id, u.email, p.full_name, p.role, p.client_id
+from auth.users u
+left join public.profiles p on p.id = u.id
+where lower(u.email) = lower('tu-correo@empresa.com');
+```
+
+Si el perfil existe pero no tiene el rol correcto, realiza el cambio explícitamente desde SQL Editor con una cuenta autorizada:
+
+```sql
+update public.profiles p
+set role = 'admin'
+from auth.users u
+where p.id = u.id
+  and lower(u.email) = lower('tu-correo@empresa.com');
+```
+
+Cierra sesión y vuelve a entrar después de modificar el rol para que el frontend vuelva a cargar el perfil.

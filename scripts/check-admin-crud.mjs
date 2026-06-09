@@ -19,6 +19,11 @@ for (const table of ['clients', 'packages', 'invoices', 'deliverables', 'request
 if (!adminSource.includes('deleteRecord(resource')) throw new Error('Delete action must call Supabase')
 if (!adminSource.includes('updateRecord(resource')) throw new Error('Edit action must call Supabase')
 if (!adminSource.includes('createRecord(resource')) throw new Error('Create action must call Supabase')
-if (!adminSource.includes('workspace.canWrite=profile.role')) throw new Error('Write access must depend on profiles.role')
+if (!adminSource.includes("workspace.canWrite=profile.role==='admin'")) throw new Error('Write access must depend on profiles.role')
 
-console.log('Admin CRUD no longer depends on mock data and uses Supabase mutations')
+for (const field of ['graphic_pieces','reels','stories','carousels','meetings']) {
+  if (!adminSource.includes(`integerFields = new Set(['graphic_pieces'`) || !adminSource.includes(`step={integerFields.has(name)?'1'`)) throw new Error(`Integer validation is missing for ${field}`)
+}
+if (!apiSource.includes("supabase.rpc('current_user_role')")) throw new Error('Mutations must verify the database role')
+
+console.log('Admin CRUD uses Supabase, validates package quantities, and verifies the database role')

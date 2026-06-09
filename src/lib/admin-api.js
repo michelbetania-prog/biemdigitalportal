@@ -24,11 +24,14 @@ function assertClient() {
   if (!supabase) throw new Error('Supabase no está configurado.')
 }
 
-function readableError(error) {
+export function readableError(error) {
   if (!error) return null
   if (error.code === '23503') return 'No se puede eliminar porque existen registros relacionados.'
   if (error.code === '23505') return 'Ya existe un registro con ese valor único.'
-  if (error.code === '42501') return 'No tienes permisos para realizar esta acción.'
+  if (error.code === '42501' || /row-level security|permission denied/i.test(error.message || '')) return 'Supabase bloqueó la operación. Confirma que tu perfil tenga role = admin y que la migración RLS más reciente esté aplicada.'
+  if (error.code === '23502') return `Falta un valor obligatorio${error.details ? `: ${error.details}` : '.'}`
+  if (error.code === '22P02') return 'Uno de los valores tiene un formato inválido. Revisa números, fechas y relaciones.'
+  if (error.code === '23514') return 'Uno de los valores no cumple las reglas de validación de la tabla.'
   return error.message || 'Ocurrió un error al guardar los cambios.'
 }
 
@@ -44,8 +47,24 @@ export async function listRecords(resource) {
   return data || []
 }
 
+
+export async function getCurrentDatabaseRole() {
+  assertClient()
+  const { data, error } = await supabase.rpc('current_user_role')
+  if (error) throw new Error(readableError(error))
+  return data
+}
+
+async function assertAdminMutation() {
+  const role = await getCurrentDatabaseRole()
+  if (role !== 'admin') {
+    throw new Error('Esta operación requiere role = admin en public.profiles.')
+  }
+}
+
 export async function createRecord(resource, payload) {
   assertClient()
+  await assertAdminMutation()
   const { data, error } = await supabase.from(resource).insert(payload).select().single()
   if (error) throw new Error(readableError(error))
   return data
@@ -53,6 +72,7 @@ export async function createRecord(resource, payload) {
 
 export async function updateRecord(resource, id, payload) {
   assertClient()
+  await assertAdminMutation()
   const { data, error } = await supabase.from(resource).update(payload).eq('id', id).select().single()
   if (error) throw new Error(readableError(error))
   return data
@@ -60,6 +80,7 @@ export async function updateRecord(resource, id, payload) {
 
 export async function deleteRecord(resource, id) {
   assertClient()
+  await assertAdminMutation()
   const { error } = await supabase.from(resource).delete().eq('id', id)
   if (error) throw new Error(readableError(error))
 }
