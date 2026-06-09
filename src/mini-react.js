@@ -64,6 +64,7 @@ function setProperty(element, name, value) {
   if (name === 'autoFocus') { if (value) queueMicrotask(() => element.focus()); return }
   if (name === 'disabled') { element.disabled = Boolean(value); return }
   if (name === 'value') { element.value = value ?? ''; return }
+  if (name === 'checked') { element.checked = Boolean(value); return }
   if (name === 'strokeWidth') { element.setAttribute('stroke-width', value); return }
   if (value === true) element.setAttribute(name, '')
   else if (value !== false && value != null) element.setAttribute(name, value)

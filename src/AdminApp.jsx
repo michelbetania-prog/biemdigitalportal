@@ -6,7 +6,7 @@ import {
   Menu, MessageCircle, MoreHorizontal, Package, Palette, Plus, Receipt, Search,
   Send, Settings, Shield, Sparkles, UserRound, Users, X
 } from './icons.jsx'
-import { activateConfidentialityAgreement, createRecord, deleteRecord, loadAdminWorkspace, loadConfidentialityAdmin, updateRecord, inviteTeamMember } from './lib/admin-api.js'
+import { activateConfidentialityAgreement, createRecord, deleteRecord, loadAdminWorkspace, loadConfidentialityAdmin, updateRecord, inviteTeamMember, uploadAdminBrandLogo } from './lib/admin-api.js'
 
 const adminNav = [
   { id:'dashboard', label:'Dashboard', icon:LayoutDashboard },
@@ -23,6 +23,9 @@ const adminNav = [
   { id:'tasks', label:'Tareas internas', icon:CheckCircle2 },
   { id:'notes', label:'Notas internas', icon:FileText },
   { id:'resources', label:'Estrategia y materiales', icon:Briefcase },
+  { id:'brand_profiles', label:'Perfiles de marca', icon:Palette },
+  { id:'meetings', label:'Reuniones', icon:CalendarDays },
+  { id:'notifications', label:'Notificaciones', icon:Bell },
   { id:'confidentiality', label:'Confidencialidad', icon:Shield },
   { id:'settings', label:'Configuración', icon:Settings },
 ]
@@ -41,7 +44,7 @@ const labels = {
 }
 
 const emptyWorkspace = {
-  clients:[], packages:[], invoices:[], deliverables:[], requests:[], extra_services:[], profiles:[], client_team_assignments:[], internal_tasks:[], internal_notes:[], client_resources:[], confidentiality_agreements:[], client_confidentiality_acceptances:[],
+  clients:[], packages:[], invoices:[], deliverables:[], requests:[], extra_services:[], profiles:[], client_team_assignments:[], internal_tasks:[], internal_notes:[], client_resources:[], client_brand_profiles:[], calendar_events:[], email_notifications:[], confidentiality_agreements:[], client_confidentiality_acceptances:[],
 }
 
 function initials(value='BI') {
@@ -202,6 +205,16 @@ const formConfigs = {
       ['client_id','Cliente','clients',true],['resource_type','Tipo','select',true,['recommendation','diagnostic','growth_route','brand_material','brief','comment','next_step']],['title','Título','text',true],['content','Contenido','textarea'],['file_url','Archivo o enlace','url'],['status','Estado','select',true,['draft','in_review','published','archived']],['visible_to_client','Visible para cliente','checkbox'],['visible_to_account_manager','Visible para agente','checkbox'],['visible_to_designer','Visible para diseño','checkbox'],['visible_to_social_media','Visible para social media','checkbox'],['visible_to_video_editor','Visible para video','checkbox'],['internal_only','Solo interno','checkbox'],
     ],
   },
+  client_brand_profiles: {
+    title:'perfil de marca', fields:[
+      ['client_id','Cliente','clients',true],['brand_logo_file','Subir logo','file'],['brand_name','Nombre de marca','text',true],['brand_logo_url','URL del logo','url'],['brand_cover_image_url','URL de portada','url'],['industry','Industria','text'],['brand_summary','Descripción corta','textarea'],['brand_about','Sobre la marca','textarea'],['main_products_services','Productos o servicios','textarea'],['target_audience','Público objetivo','textarea'],['value_proposition','Propuesta de valor','textarea'],['communication_tone','Tono de comunicación','text'],['typography','Tipografías','text'],['website_url','Sitio web','url'],['instagram_url','Instagram','url'],['whatsapp_number','WhatsApp','text'],['location','Ubicación','text'],['visible_notes','Notas visibles','textarea'],['internal_notes','Notas internas','textarea'],['client_suggestions_enabled','Permitir sugerencias','checkbox'],
+    ],
+  },
+  calendar_events: {
+    title:'reunión', fields:[
+      ['client_id','Cliente','clients',true],['title','Título','text',true],['description','Descripción','textarea'],['start_time','Inicio','datetime-local',true],['end_time','Fin','datetime-local',true],['timezone','Zona horaria','text',true],['location','Ubicación','text'],['google_meet_link','Google Meet','url'],['status','Estado','select',true,['scheduled','reschedule_requested','cancelled','completed']],['visible_to_client','Visible para cliente','checkbox'],
+    ],
+  },
   confidentiality_agreements: {
     title:'compromiso', fields:[
       ['version','Versión','text',true],['title','Título','text',true],['content','Contenido del compromiso','textarea',true],
@@ -241,6 +254,8 @@ const createDefaults = {
   client_team_assignments: { is_active:true },
   client_resources: { status:'draft', visible_to_account_manager:true, internal_only:true },
   extra_services: { price_from:0, is_active:true },
+  client_brand_profiles: { client_suggestions_enabled:true },
+  calendar_events: { timezone:'America/New_York', status:'scheduled', visible_to_client:true },
 }
 
 function initialFieldValue(resource, record, name) {
@@ -253,9 +268,10 @@ function payloadFromForm(resource, form) {
   const fieldLabels=Object.fromEntries(config.fields.map(([name,label])=>[name,label]))
   const formData=new FormData(form)
   const payload={}
-  const booleans=new Set(['includes_monthly_report','is_active','visible_to_client','visible_to_admin','visible_to_account_manager','visible_to_designer','visible_to_social_media','visible_to_video_editor','internal_only'])
+  const booleans=new Set(['includes_monthly_report','is_active','visible_to_client','visible_to_admin','visible_to_account_manager','visible_to_designer','visible_to_social_media','visible_to_video_editor','internal_only','client_suggestions_enabled'])
   for(const [name,,type] of config.fields){
     if(booleans.has(name)){ payload[name]=formData.get(name)==='on'; continue }
+    if(type==='file'){ payload[name]=formData.get(name); continue }
     let value=formData.get(name)
     if(type==='lines'){ payload[name]=`${value||''}`.split('\n').map(item=>item.trim()).filter(Boolean); continue }
     if(integerFields.has(name)){
@@ -272,7 +288,7 @@ function payloadFromForm(resource, form) {
     }
     if(value===''||value===null){ payload[name]=null; continue }
     payload[name]=typeof value==='string' ? value.trim() : value
-    if(name==='scheduled_at'&&value) payload[name]=new Date(value).toISOString()
+    if(['scheduled_at','start_time','end_time'].includes(name)&&value) payload[name]=new Date(value).toISOString()
   }
   if(resource==='invoices'&&!payload.currency) payload.currency='USD'
   return payload
@@ -283,7 +299,14 @@ function CrudModal({ resource, record, data, onClose, onSave, error, saving }) {
   const editing=Boolean(record?.id)
   const submit=async event=>{
     event.preventDefault()
-    try { await onSave(payloadFromForm(resource,event.currentTarget)) }
+    try {
+      const payload=payloadFromForm(resource,event.currentTarget)
+      if(resource==='client_brand_profiles'&&payload.brand_logo_file?.size){
+        payload.brand_logo_url=await uploadAdminBrandLogo(payload.client_id||record.client_id,payload.brand_logo_file)
+      }
+      delete payload.brand_logo_file
+      await onSave(payload)
+    }
     catch (validationError) { console.error('[BIEM form validation]', validationError); data.setFormError(validationError.message) }
   }
   return <div className="modal-backdrop" onMouseDown={onClose}><form className="crud-modal" onSubmit={submit} onMouseDown={event=>event.stopPropagation()}><header><div><span className="admin-eyebrow">{editing?'EDITAR':'CREAR'}</span><h2>{editing?'Editar':'Nuevo'} {config.title}</h2><p>Los cambios se guardarán directamente en Supabase.</p></div><button type="button" onClick={onClose}><X size={19}/></button></header><div className="crud-form-grid">{config.fields.map(([name,label,type,required,values])=>{
@@ -349,11 +372,19 @@ function Dashboard({ workspace, setActive, profile }) {
   return <div className="admin-page"><AdminHeading eyebrow="DATOS EN TIEMPO REAL" title={`Hola, ${profile.full_name?.split(' ')[0]||'equipo'}`} copy="Resumen operativo cargado directamente desde Supabase." action={workspace.canWrite?<button className="admin-primary" onClick={()=>setActive('deliverables')}><Plus size={16}/>Gestionar entregables</button>:null}/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><section className="admin-kpi-grid">{cards.map(([label,value,note,Icon,tone])=><article key={label}><div className={`admin-kpi-icon ${tone}`}><Icon size={19}/></div><span>{label}</span><strong>{value}</strong><p>{note}</p></article>)}</section><section className="admin-dashboard-grid"><div className="admin-panel activity-panel"><div className="admin-panel-head"><div><span className="admin-eyebrow">SUPABASE</span><h2>Actividad reciente</h2></div></div><div className="activity-list">{activity.map(item=>{const Icon=item.icon;return <div className="activity-item" key={item.id}><div className="activity-icon"><Icon size={15}/></div><div><p><strong>{item.title}</strong> {item.text}</p><span>{item.time}</span></div></div>})}{!activity.length&&<div className="empty-table"><Sparkles size={22}/><strong>Sin actividad reciente</strong></div>}</div></div><div className="admin-panel attention-panel"><div className="admin-panel-head"><div><span className="admin-eyebrow">PRIORIDADES</span><h2>Necesita atención</h2></div></div><button className="attention-row" onClick={()=>setActive('billing')}><div className="attention-date overdue">{data.invoices.filter(i=>i.status==='overdue').length}<span>VENCIDAS</span></div><div><strong>Facturas vencidas</strong><span>Revisar seguimiento de cobro</span></div><ArrowRight size={15}/></button><button className="attention-row" onClick={()=>setActive('requests')}><div className="attention-date request">{newRequests}<span>NUEVAS</span></div><div><strong>Solicitudes por revisar</strong><span>Asignar y responder</span></div><ArrowRight size={15}/></button><button className="attention-row" onClick={()=>setActive('deliverables')}><div className="attention-date renewal">{review}<span>REVISIÓN</span></div><div><strong>Piezas esperando revisión</strong><span>Interna o del cliente</span></div><ArrowRight size={15}/></button></div></section></div>
 }
 
+const brandProfileColumns=[
+  {key:'brand_name',label:'Marca',render:item=><span className="client-cell"><span className="brand-avatar">{item.brand_logo_url?<img src={item.brand_logo_url} alt=""/>:initials(item.brand_name||item.client?.brand_name)}</span><strong>{item.brand_name||item.client?.brand_name}</strong></span>},
+  {key:'client',label:'Cliente',render:item=>item.client?.brand_name||'—'}, {key:'industry',label:'Industria'}, {key:'updated_at',label:'Actualizado',render:item=>formatDate(item.updated_at)},
+]
+const meetingColumns=[
+  {key:'title',label:'Reunión'}, {key:'client',label:'Cliente',render:item=>item.client?.brand_name||'—'}, {key:'start_time',label:'Inicio',render:item=>formatDate(item.start_time)}, {key:'google_meet_link',label:'Meet',render:item=>item.google_meet_link?<a href={item.google_meet_link} target="_blank">Abrir enlace</a>:'—'}, {key:'status',label:'Estado',render:item=><Badge value={item.status}/>},
+]
+
 const clientColumns=[
   {key:'brand_name',label:'Cliente',render:item=><div className="client-cell"><div className="brand-avatar">{initials(item.brand_name)}</div><div><strong>{item.brand_name}</strong><span>{item.name}</span></div></div>},
   {key:'package',label:'Paquete',render:item=>item.packages?.name||'Sin paquete'}, {key:'status',label:'Estado',render:item=><Badge value={item.status}/>},
   {key:'renewal_date',label:'Renovación',render:item=>formatDate(item.renewal_date)}, {key:'assigned_to',label:'Responsable',render:item=>item.assignee?.full_name||item.assignee?.email||'Sin asignar'},
-  {key:'package_usage',label:'Uso',render:item=><strong>{item.package_usage||0}</strong>},
+  {key:'package_usage',label:'Uso',render:item=><strong>{item.package_usage||0}</strong>},{key:'preview',label:'Portal',render:item=><button className="admin-secondary" onClick={()=>window.location.assign(`/admin/preview-client/${item.id}`)}><Eye size={14}/>Ver como cliente</button>},
 ]
 const packageColumns=[
   {key:'name',label:'Paquete',render:item=><strong>{item.name}</strong>},{key:'monthly_price',label:'Precio',render:item=>formatMoney(item.monthly_price)},
@@ -406,6 +437,8 @@ function TeamPage({ workspace }) {
   const invite=async()=>{const full_name=window.prompt('Nombre completo del colaborador');if(!full_name)return;const email=window.prompt('Correo del colaborador');if(!email)return;const role=window.prompt('Rol: account_manager, designer, social_media o video_editor','designer');if(!role)return;await workspace.mutate(()=>inviteTeamMember({full_name,email,role}),`Invitación enviada a ${email}.`)}
   return <div className="admin-page"><AdminHeading eyebrow="USUARIOS REALES" title="Equipo" copy="Asigna el rol principal aquí y vincula colaboradores a clientes desde Asignaciones." action={<button className="admin-primary" onClick={invite}><Plus size={16}/>Invitar colaborador</button>}/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><div className="team-admin-grid">{workspace.data.profiles.map(member=><article key={member.id}><header><div className="team-avatar large">{initials(member.full_name||member.email)}</div><Badge value="active"/></header><h3>{member.full_name||'Sin nombre'}</h3><p>{member.email}</p><label className="team-role-editor">Rol<select value={member.role} onChange={event=>changeRole(member,event.target.value)}>{roles.map(role=><option value={role} key={role}>{labels[role]}</option>)}</select></label><footer><span className="muted-cell">Creado {formatDate(member.created_at)}</span></footer></article>)}</div><div className="admin-empty compact"><Shield size={20}/><p>Las invitaciones se procesan mediante una Edge Function segura. El navegador nunca utiliza una service role key.</p></div></div>
 }
+
+function NotificationHistory({workspace}) { const rows=workspace.data.email_notifications||[]; return <div className="admin-page"><AdminHeading eyebrow="COMUNICACIÓN" title="Historial de notificaciones" copy="Registro persistente de correos procesados desde funciones seguras."/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Cliente</th><th>Tipo</th><th>Destinatario</th><th>Asunto</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>{rows.map(item=><tr key={item.id}><td>{item.client?.brand_name||'Interno'}</td><td>{item.notification_type}</td><td>{item.recipient_email}</td><td>{item.subject}</td><td><Badge value={item.status}/></td><td>{formatDate(item.sent_at||item.created_at)}</td></tr>)}{!rows.length&&<tr><td colSpan="6">No hay notificaciones todavía.</td></tr>}</tbody></table></div></div> }
 
 function ConfidentialityAdminPage({ workspace }) {
   const [data,setData]=useState({agreements:[],acceptances:[]})
@@ -464,7 +497,7 @@ export default function AdminApp({ profile, onSignOut }) {
     billing:<EntityTablePage {...pageProps} resource="invoices" title="Facturación" eyebrow="CONTROL FINANCIERO" copy="Gestiona facturas persistentes y su estado de pago." columns={invoiceColumns} filters={['Estado','Cliente']}/>,
     requests:<EntityTablePage {...pageProps} resource="requests" title="Solicitudes" eyebrow="PETICIONES DEL PORTAL" copy="Revisa y administra solicitudes reales de clientes." columns={requestColumns} filters={['Estado','Prioridad']}/>,
     services:<EntityTablePage {...pageProps} resource="extra_services" title="Servicios adicionales" eyebrow="CATÁLOGO REAL" copy="Configura los servicios visibles en el portal cliente." columns={serviceColumns}/>,
-    reports:<UnavailablePage title="Reportes"/>, team:<TeamPage {...pageProps}/>, assignments:<EntityTablePage {...pageProps} resource="client_team_assignments" title="Asignaciones" eyebrow="EQUIPO POR CLIENTE" copy="Asigna uno o varios colaboradores con un rol específico." columns={assignmentColumns}/>, tasks:<EntityTablePage {...pageProps} resource="internal_tasks" title="Tareas internas" eyebrow="OPERACIÓN" copy="Asigna y controla trabajo interno sin exponerlo al cliente." columns={taskColumns}/>, notes:<EntityTablePage {...pageProps} resource="internal_notes" title="Notas internas" eyebrow="CONTEXTO PRIVADO" copy="Notas con visibilidad por rol y equipo asignado." columns={noteColumns}/>, resources:<EntityTablePage {...pageProps} resource="client_resources" title="Estrategia y materiales" eyebrow="VISIBILIDAD CONTROLADA" copy="Diagnósticos, rutas, recomendaciones y materiales con permisos por rol." columns={resourceColumns}/>, confidentiality:<ConfidentialityAdminPage {...pageProps}/>, settings:<UnavailablePage title="Configuración"/>,
+    reports:<UnavailablePage title="Reportes"/>, team:<TeamPage {...pageProps}/>, assignments:<EntityTablePage {...pageProps} resource="client_team_assignments" title="Asignaciones" eyebrow="EQUIPO POR CLIENTE" copy="Asigna uno o varios colaboradores con un rol específico." columns={assignmentColumns}/>, tasks:<EntityTablePage {...pageProps} resource="internal_tasks" title="Tareas internas" eyebrow="OPERACIÓN" copy="Asigna y controla trabajo interno sin exponerlo al cliente." columns={taskColumns}/>, notes:<EntityTablePage {...pageProps} resource="internal_notes" title="Notas internas" eyebrow="CONTEXTO PRIVADO" copy="Notas con visibilidad por rol y equipo asignado." columns={noteColumns}/>, brand_profiles:<EntityTablePage {...pageProps} resource="client_brand_profiles" title="Perfiles de marca" eyebrow="IDENTIDAD DEL CLIENTE" copy="Administra logo, información estratégica y la ficha Sobre la marca." columns={brandProfileColumns}/>, meetings:<EntityTablePage {...pageProps} resource="calendar_events" title="Reuniones" eyebrow="CALENDARIO INTERNO" copy="Crea reuniones manuales y comparte enlaces de Google Meet con el cliente." columns={meetingColumns}/>, notifications:<NotificationHistory workspace={workspace}/>, resources:<EntityTablePage {...pageProps} resource="client_resources" title="Estrategia y materiales" eyebrow="VISIBILIDAD CONTROLADA" copy="Diagnósticos, rutas, recomendaciones y materiales con permisos por rol." columns={resourceColumns}/>, confidentiality:<ConfidentialityAdminPage {...pageProps}/>, settings:<UnavailablePage title="Configuración"/>,
   }
   return <div className={`admin-shell ${workspace.canWrite?'':'read-only'}`}><AdminSidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} profile={profile} onLogout={onSignOut}/>{menuOpen&&<div className="admin-overlay" onClick={()=>setMenuOpen(false)}/>}<main className="admin-main"><AdminTopbar active={active} setMenuOpen={setMenuOpen} profile={profile} onRefresh={workspace.refresh}/>{!workspace.canWrite&&<div className="read-only-banner"><Eye size={14}/>Modo de solo lectura: los cambios están deshabilitados</div>}{pages[active]}</main></div>
 }

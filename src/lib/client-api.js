@@ -28,8 +28,10 @@ export async function reviewClientDeliverable(id,action,comment=''){
 
 export async function createClientRequest(profile,payload){
   assertClient(profile)
-  const {error}=await supabase.from('requests').insert({...payload,client_id:profile.client_id,requested_by:profile.id,status:'new'})
+  const {data,error}=await supabase.from('requests').insert({...payload,client_id:profile.client_id,requested_by:profile.id,status:'new'}).select('id').single()
   fail(error,'No se pudo crear la solicitud.')
+  const {error:notificationError}=await supabase.functions.invoke('send-email-notification',{body:{notification_type:'request_created',related_entity_id:data.id}})
+  if(notificationError)console.error('[BIEM email request_created]',notificationError)
 }
 
 export async function uploadClientMaterial(profile,payload){

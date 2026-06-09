@@ -1,6 +1,7 @@
 import { createElement, Fragment, useState } from './mini-react.js'
 import { ArrowRight, Eye, Lock, Shield } from './icons.jsx'
-import App from './App.jsx'
+import AdminClientPreview from './AdminClientPreview.jsx'
+import ClientPortalApp from './ClientPortalApp.jsx'
 import AdminApp from './AdminApp.jsx'
 import ClientSetupScreen from './ClientSetupScreen.jsx'
 import FirstLoginConfidentialityScreen from './FirstLoginConfidentialityScreen.jsx'
@@ -103,6 +104,12 @@ export default function AuthApp() {
     return <LoginPage context={context} />
   }
 
+  const previewMatch=path.match(/^\/admin\/preview-client\/([0-9a-f-]+)$/i)
+  if(previewMatch){
+    if(context.profile.role!=='admin')return <AccessDenied profile={context.profile}/>
+    return <AdminClientPreview clientId={previewMatch[1]} profile={context.profile} onExit={()=>navigate('/admin/dashboard')}/>
+  }
+
   if (path.startsWith('/admin')) {
     if (context.profile.role !== 'admin') return <AccessDenied profile={context.profile} />
     return <AdminApp profile={context.profile} onSignOut={signOut} />
@@ -120,7 +127,7 @@ export default function AuthApp() {
 
   if (path === '/client/first-access') {
     if (context.profile.role !== 'client') return <AccessDenied profile={context.profile} />
-    return <FirstLoginConfidentialityScreen profile={context.profile}><App profile={context.profile} onSignOut={signOut}/></FirstLoginConfidentialityScreen>
+    return <FirstLoginConfidentialityScreen profile={context.profile}><ClientPortalApp profile={context.profile} onSignOut={signOut}/></FirstLoginConfidentialityScreen>
   }
 
   if (path === '/client/onboarding' || path === '/client/update-info') {
@@ -130,18 +137,18 @@ export default function AuthApp() {
 
   if (path.startsWith('/client') || path.startsWith('/cliente')) {
     if (!['client', 'admin'].includes(context.profile.role)) return <AccessDenied profile={context.profile} />
-    return clientPortal(<App profile={context.profile} onSignOut={signOut}/>)
+    return clientPortal(<ClientPortalApp profile={context.profile} onSignOut={signOut}/>)
   }
 
   if (path === '/dashboard' || path === '/') {
-    if (context.profile.role === 'client') return clientPortal(<App profile={context.profile} onSignOut={signOut}/>)
+    if (context.profile.role === 'client') return clientPortal(<ClientPortalApp profile={context.profile} onSignOut={signOut}/>)
     if (context.profile.role === 'admin') return <AdminApp profile={context.profile} onSignOut={signOut}/>
     if (teamRoute) { queueMicrotask(()=>navigate(teamRoute,true)); return <LoadingScreen/> }
     return <AccessDenied profile={context.profile}/>
   }
 
   window.history.replaceState({}, '', '/dashboard')
-  if (context.profile.role === 'client') return clientPortal(<App profile={context.profile} onSignOut={signOut}/>)
+  if (context.profile.role === 'client') return clientPortal(<ClientPortalApp profile={context.profile} onSignOut={signOut}/>)
   if (context.profile.role === 'admin') return <AdminApp profile={context.profile} onSignOut={signOut}/>
   if (teamRoute) { queueMicrotask(()=>navigate(teamRoute,true)); return <LoadingScreen/> }
   return <AccessDenied profile={context.profile}/>

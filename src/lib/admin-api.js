@@ -12,6 +12,9 @@ const selects = {
   internal_tasks: '*, client:clients!internal_tasks_client_id_fkey(id,brand_name), assignee_profile:profiles!internal_tasks_assigned_to_fkey(id,full_name,email,role), created_by_profile:profiles!internal_tasks_created_by_fkey(id,full_name,email,role)',
   internal_notes: '*, client:clients!internal_notes_client_id_fkey(id,brand_name), created_by_profile:profiles!internal_notes_created_by_fkey(id,full_name,email,role)',
   client_resources: '*, client:clients!client_resources_client_id_fkey(id,brand_name), created_by_profile:profiles!client_resources_created_by_fkey(id,full_name,email,role)',
+  client_brand_profiles: '*, client:clients!client_brand_profiles_client_id_fkey(id,brand_name)',
+  calendar_events: '*, client:clients!calendar_events_client_id_fkey(id,brand_name), creator:profiles!calendar_events_created_by_fkey(id,full_name,email)',
+  email_notifications: '*, client:clients!email_notifications_client_id_fkey(id,brand_name)',
 }
 
 const ordering = {
@@ -26,6 +29,9 @@ const ordering = {
   internal_tasks: ['due_date', true],
   internal_notes: ['created_at', false],
   client_resources: ['updated_at', false],
+  client_brand_profiles: ['updated_at', false],
+  calendar_events: ['start_time', true],
+  email_notifications: ['created_at', false],
   confidentiality_agreements: ['created_at', false],
   client_confidentiality_acceptances: ['accepted_at', false],
 }
@@ -72,11 +78,20 @@ async function assertAdminMutation() {
   }
 }
 
+
+async function notifyForMutation(resource, record, operation) {
+  const type = resource==='invoices'&&operation==='create'?'invoice_created':resource==='deliverables'&&record.status==='client_review'?'deliverable_ready':resource==='requests'&&operation==='update'?'request_updated':resource==='client_resources'&&record.resource_type==='recommendation'&&record.visible_to_client?'recommendation_created':resource==='calendar_events'?(operation==='create'?'calendar_invitation':'calendar_updated'):null
+  if(!type)return
+  const {error}=await supabase.functions.invoke('send-email-notification',{body:{notification_type:type,related_entity_id:record.id,client_id:record.client_id}})
+  if(error)console.error(`[BIEM email ${type}]`,error)
+}
+
 export async function createRecord(resource, payload) {
   assertClient()
   await assertAdminMutation()
   const { data, error } = await supabase.from(resource).insert(payload).select().single()
   if (error) throw new Error(readableError(error))
+  await notifyForMutation(resource,data,'create')
   return data
 }
 
@@ -85,6 +100,7 @@ export async function updateRecord(resource, id, payload) {
   await assertAdminMutation()
   const { data, error } = await supabase.from(resource).update(payload).eq('id', id).select().single()
   if (error) throw new Error(readableError(error))
+  await notifyForMutation(resource,data,'update')
   return data
 }
 
@@ -96,7 +112,7 @@ export async function deleteRecord(resource, id) {
 }
 
 export async function loadAdminWorkspace() {
-  const resources = ['clients', 'packages', 'invoices', 'deliverables', 'requests', 'extra_services', 'profiles', 'client_team_assignments', 'internal_tasks', 'internal_notes', 'client_resources', 'confidentiality_agreements', 'client_confidentiality_acceptances']
+  const resources = ['clients', 'packages', 'invoices', 'deliverables', 'requests', 'extra_services', 'profiles', 'client_team_assignments', 'internal_tasks', 'internal_notes', 'client_resources', 'client_brand_profiles', 'calendar_events', 'email_notifications', 'confidentiality_agreements', 'client_confidentiality_acceptances']
   const entries = await Promise.all(resources.map(async resource => [resource, await listRecords(resource)]))
   const workspace = Object.fromEntries(entries)
   const profileById = new Map(workspace.profiles.map(profile => [profile.id, profile]))
@@ -136,4 +152,15 @@ export async function inviteTeamMember(payload) {
   if (error) throw new Error(error.message || 'No se pudo invitar al colaborador.')
   if (data?.error) throw new Error(data.error)
   return data
+}
+
+
+export async function uploadAdminBrandLogo(clientId,file) {
+  assertClient()
+  await assertAdminMutation()
+  const extension=(file.name.split('.').pop()||'png').toLowerCase()
+  const path=`clients/${clientId}/brand/logo/admin-logo-${Date.now()}.${extension}`
+  const {error}=await supabase.storage.from('client-brand-assets').upload(path,file,{upsert:true,contentType:file.type})
+  if(error)throw new Error(readableError(error))
+  return supabase.storage.from('client-brand-assets').getPublicUrl(path).data.publicUrl
 }

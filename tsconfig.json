@@ -29,6 +29,9 @@
     "src/lib/confidentiality.js",
     "src/TeamApp.jsx",
     "src/lib/team-api.js",
-    "src/lib/client-api.js"
+    "src/lib/client-api.js",
+    "src/ClientPortalApp.jsx",
+    "src/AdminClientPreview.jsx",
+    "src/lib/portal-api.js"
   ]
 }

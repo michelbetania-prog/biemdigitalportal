@@ -297,3 +297,32 @@ assigned_by_profile:profiles!client_team_assignments_assigned_by_fkey(...)
 ```
 
 Si la migración detecta una asignación cuyo usuario aún no tiene fila en `public.profiles`, se detendrá con un error descriptivo. Debes crear o reparar ese perfil antes de volver a ejecutarla; no se eliminan asignaciones automáticamente.
+
+## 13. Perfil de marca, vista como cliente, correos y reuniones
+
+Aplica `supabase/migrations/202606090005_brand_notifications_calendar.sql`. La migración añade:
+
+- `client_brand_profiles`, con una fila por cliente y separación entre notas visibles e internas.
+- `client_notification_preferences` y `email_notifications` para preferencias e historial auditable.
+- `calendar_events` para el MVP de reuniones manuales y enlaces de Google Meet.
+- El bucket público `client-brand-assets`, limitado a rutas `clients/{client_id}/brand/*` para escrituras de clientes.
+- RPCs seguras para la ficha del cliente, sus reuniones, solicitudes de reagenda y la vista previa administrativa.
+
+La vista previa se abre en `/admin/preview-client/{clientId}`. No cambia la sesión ni el rol del admin; los datos se obtienen mediante `admin_client_preview()` y se sanitizan antes de renderizarse.
+
+### Envío de correos con Resend
+
+Configura secretos únicamente en Supabase y despliega la función. Estas claves **no** deben existir en el frontend ni usar prefijos públicos:
+
+```bash
+supabase secrets set RESEND_API_KEY=re_xxx
+supabase secrets set EMAIL_FROM="Biem Digital <portal@tu-dominio.com>"
+supabase secrets set SITE_URL=https://tu-portal.vercel.app
+supabase functions deploy send-email-notification
+```
+
+El frontend autenticado invoca la Edge Function después de persistir la operación. La función vuelve a validar rol, `client_id` o asignación, respeta preferencias, envía mediante Resend y registra cada intento como `sent` o `failed`. Las solicitudes creadas por clientes generan confirmación al cliente y aviso a admins/agentes asignados.
+
+### Calendario y Google Calendar
+
+La primera fase guarda reuniones en `calendar_events`; el admin define fecha, zona horaria, asistentes y un enlace manual de Google Meet. No se guardan tokens OAuth en el navegador. Los campos `google_event_id` y la capa Edge Functions permiten añadir sincronización OAuth en una fase posterior sin cambiar el contrato visible del portal.
