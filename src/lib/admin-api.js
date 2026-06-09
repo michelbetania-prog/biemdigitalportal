@@ -8,10 +8,10 @@ const selects = {
   requests: '*, clients(id,brand_name), extra_services(id,name)',
   extra_services: '*',
   profiles: 'id,full_name,email,role,client_id,created_at',
-  client_team_assignments: '*, clients(id,brand_name), profiles!client_team_assignments_user_id_fkey(id,full_name,email,role)',
-  internal_tasks: '*, clients(id,brand_name), profiles!internal_tasks_assigned_to_fkey(id,full_name,email,role)',
-  internal_notes: '*, clients(id,brand_name), profiles!internal_notes_created_by_fkey(id,full_name,email,role)',
-  client_resources: '*, clients(id,brand_name)',
+  client_team_assignments: '*, client:clients!client_team_assignments_client_id_fkey(id,brand_name), team_member:profiles!client_team_assignments_user_id_fkey(id,full_name,email,role), assigned_by_profile:profiles!client_team_assignments_assigned_by_fkey(id,full_name,email,role)',
+  internal_tasks: '*, client:clients!internal_tasks_client_id_fkey(id,brand_name), assignee_profile:profiles!internal_tasks_assigned_to_fkey(id,full_name,email,role), created_by_profile:profiles!internal_tasks_created_by_fkey(id,full_name,email,role)',
+  internal_notes: '*, client:clients!internal_notes_client_id_fkey(id,brand_name), created_by_profile:profiles!internal_notes_created_by_fkey(id,full_name,email,role)',
+  client_resources: '*, client:clients!client_resources_client_id_fkey(id,brand_name), created_by_profile:profiles!client_resources_created_by_fkey(id,full_name,email,role)',
 }
 
 const ordering = {

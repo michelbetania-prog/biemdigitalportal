@@ -383,16 +383,16 @@ const serviceColumns=[
 
 
 const assignmentColumns=[
-  {key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},{key:'user',label:'Colaborador',render:item=>item.profiles?.full_name||item.profiles?.email||'—'},{key:'role_on_client',label:'Rol',render:item=>labels[item.role_on_client]},{key:'is_active',label:'Estado',render:item=><Badge value={item.is_active?'active':'paused'}/>},
+  {key:'client',label:'Cliente',render:item=>item.client?.brand_name||'—'},{key:'user',label:'Colaborador',render:item=>item.team_member?.full_name||item.team_member?.email||'—'},{key:'role_on_client',label:'Rol',render:item=>labels[item.role_on_client]},{key:'is_active',label:'Estado',render:item=><Badge value={item.is_active?'active':'paused'}/>},
 ]
 const taskColumns=[
-  {key:'title',label:'Tarea',render:item=><strong>{item.title}</strong>},{key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},{key:'assigned_to',label:'Responsable',render:item=>item.profiles?.full_name||'Sin asignar'},{key:'task_type',label:'Tipo'},{key:'due_date',label:'Fecha límite',render:item=>formatDate(item.due_date)},{key:'status',label:'Estado',render:item=><Badge value={item.status}/>},
+  {key:'title',label:'Tarea',render:item=><strong>{item.title}</strong>},{key:'client',label:'Cliente',render:item=>item.client?.brand_name||'—'},{key:'assigned_to',label:'Responsable',render:item=>item.assignee_profile?.full_name||'Sin asignar'},{key:'task_type',label:'Tipo'},{key:'due_date',label:'Fecha límite',render:item=>formatDate(item.due_date)},{key:'status',label:'Estado',render:item=><Badge value={item.status}/>},
 ]
 const noteColumns=[
-  {key:'note',label:'Nota',render:item=><div><strong>{item.note?.slice(0,70)}</strong></div>},{key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},{key:'author',label:'Creó',render:item=>item.profiles?.full_name||'Admin'},{key:'visibility',label:'Visibilidad'},{key:'created_at',label:'Fecha',render:item=>formatDate(item.created_at)},
+  {key:'note',label:'Nota',render:item=><div><strong>{item.note?.slice(0,70)}</strong></div>},{key:'client',label:'Cliente',render:item=>item.client?.brand_name||'—'},{key:'author',label:'Creó',render:item=>item.created_by_profile?.full_name||'Admin'},{key:'visibility',label:'Visibilidad'},{key:'created_at',label:'Fecha',render:item=>formatDate(item.created_at)},
 ]
 const resourceColumns=[
-  {key:'title',label:'Recurso',render:item=><strong>{item.title}</strong>},{key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},{key:'resource_type',label:'Tipo'},{key:'status',label:'Estado',render:item=><Badge value={item.status}/>},{key:'visible_to_client',label:'Cliente',render:item=>item.visible_to_client&&!item.internal_only?'Visible':'Interno'},
+  {key:'title',label:'Recurso',render:item=><strong>{item.title}</strong>},{key:'client',label:'Cliente',render:item=>item.client?.brand_name||'—'},{key:'resource_type',label:'Tipo'},{key:'status',label:'Estado',render:item=><Badge value={item.status}/>},{key:'visible_to_client',label:'Cliente',render:item=>item.visible_to_client&&!item.internal_only?'Visible':'Interno'},
 ]
 
 function CalendarPage({ workspace }) {

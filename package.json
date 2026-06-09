@@ -9,7 +9,7 @@
   },
   "scripts": {
     "build": "tsc && node scripts/build.mjs",
-    "check": "tsc --noEmit && node scripts/check.mjs && node scripts/check-supabase.mjs && node scripts/check-admin-crud.mjs && node scripts/check-confidentiality.mjs && node scripts/check-team-roles.mjs",
+    "check": "tsc --noEmit && node scripts/check.mjs && node scripts/check-supabase.mjs && node scripts/check-admin-crud.mjs && node scripts/check-confidentiality.mjs && node scripts/check-team-roles.mjs && node scripts/check-profile-relationships.mjs",
     "dev": "npm run build && node scripts/serve.mjs",
     "preview": "node scripts/serve.mjs",
     "check:spa": "npm run build && node scripts/check-spa.mjs"

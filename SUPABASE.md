@@ -259,3 +259,41 @@ supabase functions deploy invite-team-member
 ```
 
 Supabase inyecta automáticamente `SUPABASE_URL`, `SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` en la función alojada. El endpoint vuelve a validar que el usuario que invoca tenga `profiles.role = 'admin'` antes de enviar la invitación y asignar el rol.
+
+## 12. Corregir relaciones de asignaciones con `profiles`
+
+Si Supabase muestra:
+
+```text
+Could not find a relationship between 'client_team_assignments' and 'profiles' in the schema cache
+```
+
+aplica la migración:
+
+```text
+supabase/migrations/202606090004_fix_profile_relationships.sql
+```
+
+La migración verifica las columnas de asignación, reemplaza las foreign keys anteriores —incluidas las que apuntaban a `auth.users`— por constraints estables hacia `public.profiles`, valida los datos existentes y ejecuta:
+
+```sql
+notify pgrst, 'reload schema';
+```
+
+Las relaciones disponibles para consultas PostgREST quedan nombradas así:
+
+```text
+client_team_assignments_client_id_fkey
+client_team_assignments_user_id_fkey
+client_team_assignments_assigned_by_fkey
+```
+
+El frontend utiliza aliases explícitos para evitar ambigüedad entre `user_id` y `assigned_by`:
+
+```js
+client:clients!client_team_assignments_client_id_fkey(...)
+team_member:profiles!client_team_assignments_user_id_fkey(...)
+assigned_by_profile:profiles!client_team_assignments_assigned_by_fkey(...)
+```
+
+Si la migración detecta una asignación cuyo usuario aún no tiene fila en `public.profiles`, se detendrá con un error descriptivo. Debes crear o reparar ese perfil antes de volver a ejecutarla; no se eliminan asignaciones automáticamente.

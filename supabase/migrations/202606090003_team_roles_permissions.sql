@@ -10,9 +10,9 @@ alter table public.profiles add constraint profiles_role_check
 create table if not exists public.client_team_assignments (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references public.clients(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
+  user_id uuid not null references public.profiles(id) on delete cascade,
   role_on_client text not null check (role_on_client in ('account_manager','designer','social_media','video_editor')),
-  assigned_by uuid references auth.users(id) on delete set null default auth.uid(),
+  assigned_by uuid references public.profiles(id) on delete set null default auth.uid(),
   created_at timestamptz not null default now(),
   is_active boolean not null default true,
   unique (client_id, user_id, role_on_client)
@@ -21,8 +21,8 @@ create table if not exists public.client_team_assignments (
 create table if not exists public.internal_tasks (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references public.clients(id) on delete cascade,
-  assigned_to uuid references auth.users(id) on delete set null,
-  created_by uuid references auth.users(id) on delete set null default auth.uid(),
+  assigned_to uuid references public.profiles(id) on delete set null,
+  created_by uuid references public.profiles(id) on delete set null default auth.uid(),
   task_type text not null check (task_type in ('design','video','copy','social_media','strategy','review','administration')),
   title text not null,
   description text,
@@ -46,7 +46,7 @@ create table if not exists public.internal_tasks (
 create table if not exists public.internal_notes (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references public.clients(id) on delete cascade,
-  created_by uuid references auth.users(id) on delete set null default auth.uid(),
+  created_by uuid references public.profiles(id) on delete set null default auth.uid(),
   note text not null,
   visibility text not null default 'admin_only' check (visibility in ('admin_only','admin_and_account_manager','assigned_team','specific_role')),
   specific_role text check (specific_role is null or specific_role in ('account_manager','designer','social_media','video_editor')),
@@ -58,7 +58,7 @@ create table if not exists public.internal_notes (
 create table if not exists public.client_resources (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references public.clients(id) on delete cascade,
-  created_by uuid references auth.users(id) on delete set null default auth.uid(),
+  created_by uuid references public.profiles(id) on delete set null default auth.uid(),
   resource_type text not null check (resource_type in ('recommendation','diagnostic','growth_route','brand_material','brief','comment','next_step')),
   title text not null,
   content text,
