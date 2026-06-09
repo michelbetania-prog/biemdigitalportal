@@ -2,6 +2,8 @@ import { createElement, Fragment, useState } from './mini-react.js'
 import { ArrowRight, Eye, Lock, Shield } from './icons.jsx'
 import App from './App.jsx'
 import AdminApp from './AdminApp.jsx'
+import ClientSetupScreen from './ClientSetupScreen.jsx'
+import FirstLoginConfidentialityScreen from './FirstLoginConfidentialityScreen.jsx'
 import { destinationForRole, getAuthContext, signInWithPassword, signOut, subscribeToAuthChanges } from './lib/auth.js'
 import { supabase } from './lib/supabase.js'
 
@@ -105,18 +107,32 @@ export default function AuthApp() {
     return <AdminApp profile={context.profile} onSignOut={signOut} />
   }
 
-  if (path.startsWith('/cliente')) {
+  const clientPortal = child => context.profile.role === 'client'
+    ? <FirstLoginConfidentialityScreen profile={context.profile}>{child}</FirstLoginConfidentialityScreen>
+    : child
+
+  if (path === '/client/first-access') {
+    if (context.profile.role !== 'client') return <AccessDenied profile={context.profile} />
+    return <FirstLoginConfidentialityScreen profile={context.profile}><App profile={context.profile} onSignOut={signOut}/></FirstLoginConfidentialityScreen>
+  }
+
+  if (path === '/client/onboarding' || path === '/client/update-info') {
+    if (context.profile.role !== 'client') return <AccessDenied profile={context.profile} />
+    return clientPortal(<ClientSetupScreen type={path.endsWith('onboarding')?'new':'existing'} profile={context.profile}/>)
+  }
+
+  if (path.startsWith('/client') || path.startsWith('/cliente')) {
     if (!['client', 'admin'].includes(context.profile.role)) return <AccessDenied profile={context.profile} />
-    return <App profile={context.profile} onSignOut={signOut} />
+    return clientPortal(<App profile={context.profile} onSignOut={signOut}/>)
   }
 
   if (path === '/dashboard' || path === '/') {
-    if (context.profile.role === 'client') return <App profile={context.profile} onSignOut={signOut} />
+    if (context.profile.role === 'client') return clientPortal(<App profile={context.profile} onSignOut={signOut}/>)
     return <AdminApp profile={context.profile} onSignOut={signOut} />
   }
 
   window.history.replaceState({}, '', '/dashboard')
   return context.profile.role === 'client'
-    ? <App profile={context.profile} onSignOut={signOut} />
+    ? clientPortal(<App profile={context.profile} onSignOut={signOut}/>)
     : <AdminApp profile={context.profile} onSignOut={signOut} />
 }

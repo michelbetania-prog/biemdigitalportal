@@ -98,3 +98,22 @@ export async function loadAdminWorkspace() {
   }
   return workspace
 }
+
+
+export async function loadConfidentialityAdmin() {
+  assertClient()
+  const [{ data: agreements, error: agreementsError }, { data: acceptances, error: acceptancesError }] = await Promise.all([
+    supabase.from('confidentiality_agreements').select('*').order('created_at', { ascending:false }),
+    supabase.from('client_confidentiality_acceptances').select('*, clients(id,brand_name)').order('accepted_at', { ascending:false }),
+  ])
+  if (agreementsError) throw new Error(readableError(agreementsError))
+  if (acceptancesError) throw new Error(readableError(acceptancesError))
+  return { agreements:agreements || [], acceptances:acceptances || [] }
+}
+
+export async function activateConfidentialityAgreement(id) {
+  assertClient()
+  await assertAdminMutation()
+  const { error } = await supabase.rpc('activate_confidentiality_agreement', { p_agreement_id:id })
+  if (error) throw new Error(readableError(error))
+}

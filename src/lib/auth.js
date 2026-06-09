@@ -37,6 +37,7 @@ export async function signOut() {
 
 export function destinationForRole(role) {
   if (role === 'admin') return '/admin'
+  if (role === 'client') return '/client/dashboard'
   return '/dashboard'
 }
 

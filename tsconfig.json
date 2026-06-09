@@ -20,9 +20,12 @@
     "src/data/account-data.js",
     "src/AdminApp.jsx",
     "src/AuthApp.jsx",
+    "src/FirstLoginConfidentialityScreen.jsx",
+    "src/ClientSetupScreen.jsx",
     "src/lib/auth.js",
     "src/lib/supabase.js",
     "src/types/supabase.d.ts",
-    "src/lib/admin-api.js"
+    "src/lib/admin-api.js",
+    "src/lib/confidentiality.js"
   ]
 }

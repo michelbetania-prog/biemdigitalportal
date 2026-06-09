@@ -6,7 +6,7 @@ import {
   Menu, MessageCircle, MoreHorizontal, Package, Palette, Plus, Receipt, Search,
   Send, Settings, Shield, Sparkles, UserRound, Users, X
 } from './icons.jsx'
-import { createRecord, deleteRecord, loadAdminWorkspace, updateRecord } from './lib/admin-api.js'
+import { activateConfidentialityAgreement, createRecord, deleteRecord, loadAdminWorkspace, loadConfidentialityAdmin, updateRecord } from './lib/admin-api.js'
 
 const adminNav = [
   { id:'dashboard', label:'Dashboard', icon:LayoutDashboard },
@@ -19,13 +19,14 @@ const adminNav = [
   { id:'services', label:'Servicios adicionales', icon:Briefcase },
   { id:'reports', label:'Reportes', icon:FileBarChart },
   { id:'team', label:'Equipo', icon:UserRound },
+  { id:'confidentiality', label:'Confidencialidad', icon:Shield },
   { id:'settings', label:'Configuración', icon:Settings },
 ]
 
 const rolePermissions = {
   admin: adminNav.map(item => item.id),
   team: ['dashboard','clients','deliverables','calendar','requests'],
-  viewer: adminNav.map(item => item.id).filter(id => id !== 'settings'),
+  viewer: adminNav.map(item => item.id).filter(id => !['settings','confidentiality'].includes(id)),
   client: [],
 }
 
@@ -176,6 +177,11 @@ const formConfigs = {
     title:'servicio adicional', fields:[
       ['name','Nombre','text',true],['category','Categoría','select',true,['strategy_growth','content_design','advertising_sales','organization_automation']],
       ['description','Descripción','textarea'],['price_from','Precio desde','number',true],['estimated_delivery','Tiempo estimado','text'],['is_active','Visible en portal','checkbox'],
+    ],
+  },
+  confidentiality_agreements: {
+    title:'compromiso', fields:[
+      ['version','Versión','text',true],['title','Título','text',true],['content','Contenido del compromiso','textarea',true],
     ],
   },
 }
@@ -356,6 +362,42 @@ function TeamPage({ workspace }) {
   return <div className="admin-page"><AdminHeading eyebrow="USUARIOS REALES" title="Equipo" copy="Perfiles registrados en Supabase Auth y public.profiles."/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><div className="team-admin-grid">{workspace.data.profiles.map(member=><article key={member.id}><header><div className="team-avatar large">{initials(member.full_name||member.email)}</div><Badge value="active"/></header><h3>{member.full_name||'Sin nombre'}</h3><p>{member.email}</p><span className="role-label">{labels[member.role]}</span><footer><span className="muted-cell">Creado {formatDate(member.created_at)}</span></footer></article>)}</div></div>
 }
 
+function ConfidentialityAdminPage({ workspace }) {
+  const [data,setData]=useState({agreements:[],acceptances:[]})
+  const [loading,setLoading]=useState(true)
+  const [error,setError]=useState('')
+  const [notice,setNotice]=useState('')
+  const [editing,setEditing]=useState(null)
+  const [deleting,setDeleting]=useState(null)
+  const [revision,setRevision]=useState(0)
+
+  useEffect(()=>{
+    let active=true
+    setLoading(true)
+    loadConfidentialityAdmin().then(result=>{if(active){setData(result);setError('')}}).catch(loadError=>{if(active)setError(loadError.message)}).finally(()=>{if(active)setLoading(false)})
+    return ()=>{active=false}
+  },[revision])
+
+  const run=async(operation,message)=>{
+    setError('');setNotice('')
+    try{await operation();setNotice(message);setRevision(value=>value+1);return true}
+    catch(operationError){console.error('[BIEM confidentiality admin]',operationError);setError(operationError.message);return false}
+  }
+  const save=async payload=>{
+    const ok=await run(()=>editing?.id?updateRecord('confidentiality_agreements',editing.id,payload):createRecord('confidentiality_agreements',payload),`Compromiso ${editing?.id?'actualizado':'creado'} correctamente.`)
+    if(ok)setEditing(null)
+  }
+  const remove=async()=>{
+    const ok=await run(()=>deleteRecord('confidentiality_agreements',deleting.id),'Compromiso eliminado correctamente.')
+    if(ok)setDeleting(null)
+  }
+  const activeAgreement=data.agreements.find(item=>item.is_active)
+  const acceptedClients=new Set(data.acceptances.filter(item=>item.agreement_id===activeAgreement?.id).map(item=>item.client_id))
+  const pending=Math.max(0,workspace.data.clients.length-acceptedClients.size)
+
+  return <div className="admin-page"><AdminHeading eyebrow="ACCESO PRIVADO" title="Confidencialidad" copy="Gestiona versiones del compromiso y revisa qué clientes aceptaron." action={<button className="admin-primary" onClick={()=>setEditing({})}><Plus size={16}/>Crear versión</button>}/><Feedback error={error} notice={notice} loading={loading}/><div className="acceptance-counts"><span><strong>{data.agreements.length}</strong>versiones</span><span><strong>{acceptedClients.size}</strong>clientes aceptaron la activa</span><span><strong>{pending}</strong>pendientes</span></div><div className="admin-panel"><div className="admin-panel-head"><div><span className="admin-eyebrow">VERSIONES</span><h2>Compromisos registrados</h2></div></div><div className="confidentiality-admin-list">{data.agreements.map(item=><article className="confidentiality-admin-card" key={item.id}><div><Badge value={item.is_active?'active':'paused'}/><h3>{item.title} · {item.version}</h3><p>{item.content.slice(0,180)}{item.content.length>180?'…':''}</p></div><div className="confidentiality-admin-actions">{!item.is_active&&<button className="admin-primary" onClick={()=>run(()=>activateConfidentialityAgreement(item.id),'Nueva versión activa. Los clientes deberán aceptarla.')}>Activar</button>}<button className="admin-secondary" onClick={()=>setEditing(item)}><Edit size={14}/>Editar</button>{!item.is_active&&<button className="danger-button" onClick={()=>setDeleting(item)}>Eliminar</button>}</div></article>)}{!loading&&!data.agreements.length&&<div className="empty-table"><Shield size={24}/><strong>No hay compromisos registrados</strong></div>}</div></div><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Cliente</th><th>Versión</th><th>Nombre aceptante</th><th>Fecha</th><th>IP</th></tr></thead><tbody>{data.acceptances.map(item=><tr key={item.id}><td><strong>{item.clients?.brand_name||'Cliente'}</strong></td><td>{item.agreement_version}</td><td>{item.accepted_name}</td><td>{formatDate(item.accepted_at)}</td><td>{item.ip_address||'No disponible'}</td></tr>)}{!loading&&!data.acceptances.length&&<tr><td colSpan="5"><div className="empty-table"><FileText size={22}/><strong>Aún no hay aceptaciones</strong></div></td></tr>}</tbody></table></div>{editing&&<CrudModal resource="confidentiality_agreements" record={editing} data={{...workspace.data,setFormError:setError}} onClose={()=>setEditing(null)} onSave={save} error={error} saving={false}/>} {deleting&&<ConfirmDelete label={`${deleting.title} ${deleting.version}`} onClose={()=>setDeleting(null)} onConfirm={remove}/>}</div>
+}
+
 function UnavailablePage({ title }) {
   return <div className="admin-page"><AdminHeading eyebrow="PRÓXIMA INTEGRACIÓN" title={title} copy="Este módulo no usa datos de ejemplo. Requiere su tabla y migración correspondiente antes de habilitarse."/><div className="admin-empty"><FileText size={30}/><h3>Sin fuente de datos configurada</h3><p>No se muestran mocks para evitar confundir información de prueba con datos reales.</p></div></div>
 }
@@ -377,7 +419,7 @@ export default function AdminApp({ profile, onSignOut }) {
     billing:<EntityTablePage {...pageProps} resource="invoices" title="Facturación" eyebrow="CONTROL FINANCIERO" copy="Gestiona facturas persistentes y su estado de pago." columns={invoiceColumns} filters={['Estado','Cliente']}/>,
     requests:<EntityTablePage {...pageProps} resource="requests" title="Solicitudes" eyebrow="PETICIONES DEL PORTAL" copy="Revisa y administra solicitudes reales de clientes." columns={requestColumns} filters={['Estado','Prioridad']}/>,
     services:<EntityTablePage {...pageProps} resource="extra_services" title="Servicios adicionales" eyebrow="CATÁLOGO REAL" copy="Configura los servicios visibles en el portal cliente." columns={serviceColumns}/>,
-    reports:<UnavailablePage title="Reportes"/>, team:<TeamPage {...pageProps}/>, settings:<UnavailablePage title="Configuración"/>,
+    reports:<UnavailablePage title="Reportes"/>, team:<TeamPage {...pageProps}/>, confidentiality:<ConfidentialityAdminPage {...pageProps}/>, settings:<UnavailablePage title="Configuración"/>,
   }
   return <div className={`admin-shell ${workspace.canWrite?'':'read-only'}`}><AdminSidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} profile={profile} onLogout={onSignOut}/>{menuOpen&&<div className="admin-overlay" onClick={()=>setMenuOpen(false)}/>}<main className="admin-main"><AdminTopbar active={active} setMenuOpen={setMenuOpen} profile={profile} onRefresh={workspace.refresh}/>{!workspace.canWrite&&<div className="read-only-banner"><Eye size={14}/>Modo de solo lectura: los cambios están deshabilitados</div>}{pages[active]}</main></div>
 }

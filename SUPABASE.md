@@ -169,3 +169,30 @@ where p.id = u.id
 ```
 
 Cierra sesión y vuelve a entrar después de modificar el rol para que el frontend vuelva a cargar el perfil.
+
+## 10. Pantalla privada de primer acceso y confidencialidad
+
+Aplica esta migración después del esquema y las políticas administrativas:
+
+```text
+supabase/migrations/202606090002_client_confidentiality_gate.sql
+```
+
+La migración agrega `onboarding_type` y `onboarding_completed` a `clients`, crea las tablas `confidentiality_agreements` y `client_confidentiality_acceptances`, instala el compromiso inicial `2026.06-v1`, mantiene RLS activo y expone funciones seguras para aceptar o activar una versión.
+
+El flujo del cliente queda protegido en `/client/first-access`, `/client/onboarding`, `/client/update-info` y `/client/dashboard`. Cualquier entrada directa al portal cliente vuelve a consultar el acuerdo activo y su aceptación en Supabase antes de renderizar el dashboard.
+
+Para clasificar el siguiente paso de cada cliente:
+
+```sql
+update public.clients
+set onboarding_type = 'new', onboarding_completed = false
+where id = 'UUID_DEL_CLIENTE';
+
+-- Cuando termine su configuración:
+update public.clients
+set onboarding_completed = true
+where id = 'UUID_DEL_CLIENTE';
+```
+
+El administrador puede crear versiones, editar su texto, activar una nueva versión y consultar aceptaciones desde **Admin → Confidencialidad**. Al activar una versión nueva, los clientes que no tengan una aceptación para esa versión son bloqueados antes del dashboard.
