@@ -400,3 +400,13 @@ Los colaboradores acceden a `/team/dashboard` y disponen de Resumen, Tablero, Li
 - Los clientes no reciben estas tareas porque permanecen con `internal_only = true` y `visible_to_client = false`.
 
 La migración conserva compatibilidad con tareas existentes, convierte sus estados y mantiene las políticas administrativas actuales.
+
+## 17. Ejemplos guía en estados vacíos
+
+Los módulos de cliente, administración y colaboradores utilizan `src/GuideExample.jsx` para mostrar referencias visuales cuando una consulta real no devuelve registros.
+
+- Cada referencia está identificada de forma explícita como **“Ejemplo · Guía visual”**.
+- No se inserta en Supabase, no participa en métricas y no se mezcla con registros reales.
+- En cuanto el módulo recibe información real, el ejemplo deja de renderizarse automáticamente.
+- En pantallas administrativas y en la vista previa del cliente, el admin puede usar **Eliminar guía**. La preferencia se guarda únicamente en `localStorage` y puede restablecerse eliminando la clave `biem-guide-dismissed:{sección}`.
+- Los textos están centralizados en `src/GuideExample.jsx`, por lo que pueden reemplazarse sin modificar las consultas ni los componentes CRUD.

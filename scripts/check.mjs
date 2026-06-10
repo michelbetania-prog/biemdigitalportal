@@ -13,6 +13,7 @@ const requiredFiles = [
   'src/ClientSetupScreen.jsx',
   'src/TeamApp.jsx',
   'src/ClientPortalApp.jsx',
+  'src/GuideExample.jsx',
   'src/AdminClientPreview.jsx',
   'src/lib/auth.js',
   'src/lib/supabase.js',
