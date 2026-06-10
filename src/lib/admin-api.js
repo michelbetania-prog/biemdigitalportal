@@ -164,3 +164,20 @@ export async function uploadAdminBrandLogo(clientId,file) {
   if(error)throw new Error(readableError(error))
   return supabase.storage.from('client-brand-assets').getPublicUrl(path).data.publicUrl
 }
+
+export async function createClientWithAuthUser(payload) {
+  assertClient()
+  await assertAdminMutation()
+  const { data, error } = await supabase.functions.invoke('create-client-with-auth-user', { body:payload })
+  if (error) {
+    let message=error.message || 'No se pudo registrar el cliente.'
+    try {
+      const context=error.context
+      if(context?.json) message=(await context.json())?.error || message
+    } catch {}
+    throw new Error(message)
+  }
+  if (data?.error) throw new Error(data.error)
+  if (!data?.success || !data.clientId || !data.userId) throw new Error('La función no devolvió un registro de cliente válido.')
+  return data
+}

@@ -326,3 +326,25 @@ El frontend autenticado invoca la Edge Function después de persistir la operaci
 ### Calendario y Google Calendar
 
 La primera fase guarda reuniones en `calendar_events`; el admin define fecha, zona horaria, asistentes y un enlace manual de Google Meet. No se guardan tokens OAuth en el navegador. Los campos `google_event_id` y la capa Edge Functions permiten añadir sincronización OAuth en una fase posterior sin cambiar el contrato visible del portal.
+
+## 14. Registro controlado de clientes desde Admin
+
+La pantalla **Admin → Clientes → Crear cliente** llama a la Edge Function `create-client-with-auth-user`. El navegador envía los datos y la contraseña únicamente a esta función autenticada; la contraseña se entrega directamente a Supabase Auth y nunca se inserta en `profiles`, `clients` ni otra tabla pública.
+
+La función valida que quien invoca tenga `profiles.role = 'admin'` y realiza este flujo:
+
+1. Comprueba los campos, la seguridad de la contraseña, el paquete y posibles duplicados.
+2. Crea la fila de `clients` con onboarding pendiente.
+3. Crea el usuario con Supabase Admin API y acceso confirmado.
+4. Vincula `profiles.id` con Auth, asigna `role = client` y `client_id`.
+5. Crea `client_brand_profiles` con los datos iniciales de marca.
+6. Si se solicita, envía el correo de bienvenida sin incluir la contraseña.
+7. Si una operación crítica falla, elimina el usuario de Auth y el cliente creado para evitar registros parciales.
+
+Despliega la función con:
+
+```bash
+supabase functions deploy create-client-with-auth-user
+```
+
+Para el correo opcional utiliza los mismos secretos `RESEND_API_KEY`, `EMAIL_FROM` y `SITE_URL` documentados anteriormente. `SUPABASE_SERVICE_ROLE_KEY` es inyectada por Supabase dentro de la función y no debe configurarse en Vercel ni exponerse en `config.js`.
