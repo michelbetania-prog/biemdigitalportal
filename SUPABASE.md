@@ -410,3 +410,19 @@ Los módulos de cliente, administración y colaboradores utilizan `src/GuideExam
 - En cuanto el módulo recibe información real, el ejemplo deja de renderizarse automáticamente.
 - En pantallas administrativas y en la vista previa del cliente, el admin puede usar **Eliminar guía**. La preferencia se guarda únicamente en `localStorage` y puede restablecerse eliminando la clave `biem-guide-dismissed:{sección}`.
 - Los textos están centralizados en `src/GuideExample.jsx`, por lo que pueden reemplazarse sin modificar las consultas ni los componentes CRUD.
+
+## 18. Mis marcas para colaboradores
+
+Aplica `supabase/migrations/202606100003_team_brand_workspace.sql` después de las migraciones del Kanban. Esta migración añade el RPC seguro `team_brand_directory()` y permite a los colaboradores consultar reuniones de clientes donde tienen una asignación activa.
+
+La ruta `/team/brands` muestra únicamente las marcas vinculadas al usuario mediante `client_team_assignments`. Desde cada tarjeta se puede abrir `/team/brands/{clientId}` para consultar:
+
+- rol del colaborador, estado del cliente y agente de cuenta;
+- conteos de tareas por estado, vencidas y próxima entrega;
+- próxima reunión;
+- información de contacto y perfil de marca;
+- redes sociales, web, WhatsApp y enlaces importantes;
+- carpeta principal de Google Drive cuando exista un vínculo de carpeta o un archivo principal visible para el equipo;
+- entregables, materiales y contexto operativo de la marca.
+
+El RPC no devuelve paquetes, facturación, pagos ni notas `admin_only`. La política de calendario exige una asignación activa mediante `is_assigned_to_client(client_id)`.

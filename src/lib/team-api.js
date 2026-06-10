@@ -8,8 +8,8 @@ const taskSelect='id,client_id,assigned_to,created_by,task_type,title,descriptio
 export async function loadTeamWorkspace(profile){
   assertStaff(profile)
   const requestsQuery=profile.role==='account_manager'?supabase.from('requests').select('id,client_id,request_type,description,desired_due_date,priority,status,admin_response,created_at').order('created_at',{ascending:false}):Promise.resolve({data:[],error:null})
-  const [clients,tasks,deliverables,requests,resources,notes,brands,members]=await Promise.all([
-    supabase.rpc('team_client_overview'),
+  const [clients,tasks,deliverables,requests,resources,notes,brands,members,events]=await Promise.all([
+    supabase.rpc('team_brand_directory'),
     supabase.from('internal_tasks').select(taskSelect).order('due_date',{ascending:true,nullsFirst:false}),
     supabase.from('deliverables').select('id,client_id,assigned_to,name,content_type,description,status,priority,due_date,scheduled_at,file_url,publication_url,internal_comments,client_comments,updated_at,drive_assets:deliverable_drive_assets(id,name,drive_url,asset_type,visible_to_client,is_primary,status,sort_order,added_by)').order('due_date',{ascending:true,nullsFirst:false}),
     requestsQuery,
@@ -17,9 +17,10 @@ export async function loadTeamWorkspace(profile){
     supabase.from('internal_notes').select('id,client_id,created_by,note,visibility,specific_role,created_at').order('created_at',{ascending:false}),
     supabase.rpc('team_brand_context'),
     supabase.rpc('team_client_members'),
+    supabase.from('calendar_events').select('id,client_id,title,description,start_time,end_time,timezone,location,google_meet_link,status,visible_to_client').neq('status','cancelled').order('start_time',{ascending:true}),
   ])
-  for(const [result,label] of [[clients,'clientes'],[tasks,'tareas'],[deliverables,'entregables'],[requests,'solicitudes'],[resources,'materiales'],[notes,'notas'],[brands,'marcas'],[members,'equipo asignado']])fail(result.error,`No se pudieron cargar ${label}.`)
-  return {clients:clients.data||[],tasks:tasks.data||[],deliverables:deliverables.data||[],requests:requests.data||[],resources:resources.data||[],notes:notes.data||[],brands:brands.data||[],members:members.data||[]}
+  for(const [result,label] of [[clients,'clientes'],[tasks,'tareas'],[deliverables,'entregables'],[requests,'solicitudes'],[resources,'materiales'],[notes,'notas'],[brands,'marcas'],[members,'equipo asignado'],[events,'reuniones']])fail(result.error,`No se pudieron cargar ${label}.`)
+  return {clients:clients.data||[],tasks:tasks.data||[],deliverables:deliverables.data||[],requests:requests.data||[],resources:resources.data||[],notes:notes.data||[],brands:brands.data||[],members:members.data||[],events:events.data||[]}
 }
 
 export async function updateTeamTask(profile,id,patch){

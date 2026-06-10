@@ -20,9 +20,9 @@ if(migration.includes("client_id = (select public.current_client_id())\n);"))thr
 if(!migration.includes("create policy invoices_select")||migration.includes("current_user_role()) = 'account_manager'\n  or client_id"))throw new Error('Financial policy must not expose invoices to staff')
 if(!router.includes("if (path.startsWith('/team'))"))throw new Error('Dedicated team route guard missing')
 if(!router.includes('return <TeamApp'))throw new Error('Team roles must not render the client app')
-if(!api.includes("supabase.rpc('team_client_overview')"))throw new Error('Team API must use safe client RPC')
+if(!api.includes("supabase.rpc('team_brand_directory')"))throw new Error('Team API must use safe assigned-brand RPC')
 if(api.includes("from('invoices')")||api.includes("from('packages')"))throw new Error('Team API must not query financial tables')
 for(const rpc of ['client_account_overview','client_deliverables','client_invoices','client_requests','client_visible_tasks','client_visible_resources']){if(!clientApi.includes(`rpc('${rpc}')`))throw new Error(`Client API must use safe RPC ${rpc}`)}
 if(!inviteFunction.includes("profile?.role !== 'admin'")||!inviteFunction.includes('SUPABASE_SERVICE_ROLE_KEY'))throw new Error('Secure admin-only invitation function missing')
-if(!app.includes('Mis tareas')||!app.includes('Mis clientes'))throw new Error('Team workspace views missing')
+if(!app.includes('Mis tareas')||!app.includes('Mis marcas'))throw new Error('Team workspace views missing')
 console.log('Team roles, dedicated routes, assignment-scoped RLS and non-financial workspace validated')
