@@ -117,7 +117,7 @@ export default function AuthApp() {
 
   const teamRoute = teamRoleRoutes[context.profile.role]
   if (path.startsWith('/team')) {
-    if (!teamRoute || path !== teamRoute) return <AccessDenied profile={context.profile} />
+    if (!teamRoute) return <AccessDenied profile={context.profile} />
     return <TeamApp profile={context.profile} onSignOut={signOut}/>
   }
 

@@ -38,7 +38,7 @@ const rolePermissions = {
 
 const labels = {
   active:'Activo', paused:'Pausado', expired:'Vencido', paid:'Pagado', pending:'Pendiente', overdue:'Vencido',
-  in_progress:'En proceso', internal_review:'Revisión interna', client_review:'Enviado al cliente',
+  todo:'Por hacer', in_progress:'En proceso', in_review:'En revisión', urgent:'Urgente', internal_review:'Revisión interna', client_review:'Enviado al cliente',
   changes_requested:'Cambios solicitados', approved:'Aprobado', published:'Publicado', cancelled:'Cancelado',
   new:'Nueva', in_review:'En revisión', rejected:'Rechazada', converted:'Convertida', completed:'Completada',
   high:'Alta', medium:'Media', low:'Baja', admin:'Admin', client:'Cliente', viewer:'Viewer', account_manager:'Agente de cuenta', designer:'Diseño gráfico', social_media:'Social media', video_editor:'Editor de video', ready_for_review:'Listo para revisión', corrected:'Corregido',
@@ -199,7 +199,7 @@ const formConfigs = {
   },
   internal_tasks: {
     title:'tarea interna', fields:[
-      ['client_id','Cliente','clients',true],['assigned_to','Responsable','profiles'],['task_type','Tipo','select',true,['design','video','copy','social_media','strategy','review','administration']],['title','Título','text',true],['description','Descripción','textarea'],['status','Estado','select',true,['pending','in_progress','ready_for_review','changes_requested','corrected','completed','paused']],['priority','Prioridad','select',true,['low','medium','high']],['due_date','Fecha límite','date'],['result_url','Resultado o enlace','url'],['internal_comment','Comentario interno','textarea'],['visible_to_client','Visible para cliente','checkbox'],['visible_to_account_manager','Visible para agente','checkbox'],['visible_to_designer','Visible para diseño','checkbox'],['visible_to_social_media','Visible para social media','checkbox'],['visible_to_video_editor','Visible para video','checkbox'],['internal_only','Solo interno','checkbox'],
+      ['client_id','Cliente','clients',true],['assigned_to','Responsable','profiles'],['task_type','Tipo','select',true,['design','video','copy','social_media','strategy','review','administration','meeting','publication','client_delivery']],['title','Título','text',true],['description','Descripción','textarea'],['status','Estado','select',true,['todo','in_progress','in_review','completed']],['priority','Prioridad','select',true,['low','medium','high','urgent']],['due_date','Fecha límite','date'],['result_url','Resultado o enlace','url'],['internal_comment','Comentario interno','textarea'],['visible_to_client','Visible para cliente','checkbox'],['visible_to_account_manager','Visible para agente','checkbox'],['visible_to_designer','Visible para diseño','checkbox'],['visible_to_social_media','Visible para social media','checkbox'],['visible_to_video_editor','Visible para video','checkbox'],['internal_only','Solo interno','checkbox'],
     ],
   },
   internal_notes: {
@@ -259,7 +259,7 @@ const createDefaults = {
   deliverables: { status:'pending', priority:'medium' },
   deliverable_drive_assets: { asset_type:'file', sort_order:0, status:'active', visible_to_client:false, is_primary:false },
   requests: { status:'new', priority:'medium' },
-  internal_tasks: { status:'pending', priority:'medium', visible_to_account_manager:true, internal_only:true },
+  internal_tasks: { status:'todo', priority:'medium', visible_to_account_manager:true, internal_only:true },
   client_team_assignments: { is_active:true },
   client_resources: { status:'draft', visible_to_account_manager:true, internal_only:true },
   extra_services: { price_from:0, is_active:true },
@@ -376,7 +376,7 @@ function Dashboard({ workspace, setActive, profile }) {
   const confidentialityPending=activeAgreement?data.clients.filter(item=>!acceptedClients.has(item.id)).length:0
   const onboardingPending=data.clients.filter(item=>!item.onboarding_completed).length
   const cards=[
-    ['Clientes activos',activeClients,'Cuentas en servicio',Users,'green'],['Entregables pendientes',pending,'Pendiente o en proceso',Clock3,'amber'],['Por revisar',review,'Interno o cliente',Eye,'lilac'],['Tareas abiertas',data.internal_tasks.filter(item=>!['completed','paused'].includes(item.status)).length,'Trabajo del equipo',CheckCircle2,'blue'],
+    ['Clientes activos',activeClients,'Cuentas en servicio',Users,'green'],['Entregables pendientes',pending,'Pendiente o en proceso',Clock3,'amber'],['Por revisar',review,'Interno o cliente',Eye,'lilac'],['Tareas abiertas',data.internal_tasks.filter(item=>item.status!=='completed').length,'Trabajo del equipo',CheckCircle2,'blue'],
     ['Facturas pendientes',pendingInvoices,'Por cobrar',Receipt,'coral'],['Solicitudes nuevas',newRequests,'Requieren respuesta',MessageCircle,'lilac'],['Confidencialidad pendiente',confidentialityPending,'Versión activa',Shield,'green'],['Onboarding pendiente',onboardingPending,'Nuevos o actualización',AlertTriangle,'coral'],
   ]
   const activity=[

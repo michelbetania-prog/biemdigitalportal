@@ -373,3 +373,30 @@ https://docs.google.com/
 La aprobación y solicitud de cambios continúan realizándose sobre el entregable. Los archivos permanecen alojados y compartidos por Google Drive, por lo que también debes configurar en Drive los permisos de acceso apropiados para cada cliente.
 
 Esta estructura deja preparado `drive_item_id` para una fase posterior con Google Drive API, pero no requiere credenciales Google, OAuth, refresh tokens ni cambios en Vercel durante el MVP.
+
+## 16. Espacio de colaboradores con tablero Kanban
+
+Aplica `supabase/migrations/202606100002_team_kanban_workspace.sql`. La migración amplía `internal_tasks` sin duplicarla y normaliza los estados anteriores al flujo:
+
+```text
+todo → in_progress → in_review → completed
+```
+
+También añade prioridad `urgent`, nuevos tipos operativos, `completed_at`, contenido creativo, etiquetas, relación directa con entregables, comentarios internos y adjuntos de Google Drive.
+
+Las nuevas tablas son:
+
+- `task_comments`: conversaciones internas vinculadas a una tarea.
+- `task_attachments`: enlaces y materiales, inicialmente Google Drive, con validación de cliente y tarea.
+
+Los colaboradores acceden a `/team/dashboard` y disponen de Resumen, Tablero, Lista, Calendario, Mis clientes y Documentos. La ruta `/team/tasks/{taskId}` abre el detalle de tarea sin utilizar el dashboard cliente.
+
+### Permisos del tablero
+
+- El agente de cuenta ve tareas de sus clientes asignados, puede crear tareas, asignarlas al equipo del cliente, moverlas, cambiar prioridad y completarlas.
+- Diseño y video ven sus tareas y trabajo relevante de marcas asignadas; solo pueden mover tareas propias entre `todo`, `in_progress` e `in_review`.
+- Social media recibe trabajo de social media, copy, publicación y entrega al cliente según visibilidad y asignación.
+- Los colaboradores solo reciben contexto de marca mediante `team_brand_context()` y miembros mediante `team_client_members()`; estas funciones no devuelven facturación, pagos ni notas `admin_only`.
+- Los clientes no reciben estas tareas porque permanecen con `internal_only = true` y `visible_to_client = false`.
+
+La migración conserva compatibilidad con tareas existentes, convierte sus estados y mantiene las políticas administrativas actuales.

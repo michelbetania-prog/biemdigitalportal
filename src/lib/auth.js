@@ -36,10 +36,10 @@ export async function signOut() {
 }
 
 export const teamRoleRoutes = {
-  account_manager: '/team/account-manager',
-  designer: '/team/designer',
-  social_media: '/team/social-media',
-  video_editor: '/team/video-editor',
+  account_manager: '/team/dashboard',
+  designer: '/team/dashboard',
+  social_media: '/team/dashboard',
+  video_editor: '/team/dashboard',
 }
 
 export function destinationForRole(role) {
