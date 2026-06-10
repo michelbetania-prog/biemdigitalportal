@@ -1,6 +1,6 @@
 import { createElement, Fragment, useEffect, useState } from './mini-react.js'
-import { ArrowLeft, ArrowRight, Lock, Shield } from './icons.jsx'
-import ClientPortalApp from './ClientPortalApp.jsx'
+import { ArrowRight, Lock, Shield } from './icons.jsx'
+import ClientPortalApp, { AdminPreviewBar } from './ClientPortalApp.jsx'
 import { loadAdminClientPreview } from './lib/portal-api.js'
 
 export default function AdminClientPreview({clientId,profile,onExit}){
@@ -14,4 +14,4 @@ export default function AdminClientPreview({clientId,profile,onExit}){
   if((stage==='setup'||stage==='auto')&&needsSetup)return <PreviewFrame data={data} onExit={onExit}><div className="first-access-card setup-card"><div className="first-access-lock"><Shield/></div><span className="admin-eyebrow">SIGUIENTE PASO DEL CLIENTE</span><h1>{data.account.onboarding_type==='new'?'Onboarding inicial':'Confirmación de información'}</h1><p className="first-access-lead">Esta es la capa previa al dashboard. La simulación no modifica el estado real del cliente.</p><button className="admin-primary first-access-submit" onClick={()=>setStage('portal')}>Continuar al dashboard <ArrowRight/></button></div></PreviewFrame>
   return <ClientPortalApp profile={profile} previewData={data} previewClientId={clientId} onExitPreview={onExit}/>
 }
-function PreviewFrame({data,onExit,children}){return <div className="preview-stage"><div className="preview-bar"><span>Estás viendo este portal como admin. Cliente: <strong>{data.account?.brand_name}</strong></span><button onClick={onExit}><ArrowLeft/>Volver al panel admin</button></div>{children}</div>}
+function PreviewFrame({data,onExit,children}){return <div className="preview-stage"><AdminPreviewBar clientName={data.account?.brand_name} onExit={onExit}/>{children}</div>}
