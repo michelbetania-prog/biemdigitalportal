@@ -4,7 +4,8 @@ const selects = {
   clients: '*, packages(id,name)',
   packages: '*',
   invoices: '*, clients(id,brand_name), packages(id,name)',
-  deliverables: '*, clients(id,brand_name)',
+  deliverables: '*, clients(id,brand_name), drive_assets:deliverable_drive_assets(id,name,drive_url,asset_type,visible_to_client,is_primary,status,sort_order)',
+  deliverable_drive_assets: '*, deliverable:deliverables!deliverable_drive_assets_deliverable_id_fkey(id,name,content_type), client:clients!deliverable_drive_assets_client_id_fkey(id,brand_name), added_by_profile:profiles!deliverable_drive_assets_added_by_fkey(id,full_name,email)',
   requests: '*, clients(id,brand_name), extra_services(id,name)',
   extra_services: '*',
   profiles: 'id,full_name,email,role,client_id,created_at',
@@ -22,6 +23,7 @@ const ordering = {
   packages: ['name', true],
   invoices: ['due_date', false],
   deliverables: ['due_date', true],
+  deliverable_drive_assets: ['created_at', false],
   requests: ['created_at', false],
   extra_services: ['name', true],
   profiles: ['full_name', true],
@@ -112,7 +114,7 @@ export async function deleteRecord(resource, id) {
 }
 
 export async function loadAdminWorkspace() {
-  const resources = ['clients', 'packages', 'invoices', 'deliverables', 'requests', 'extra_services', 'profiles', 'client_team_assignments', 'internal_tasks', 'internal_notes', 'client_resources', 'client_brand_profiles', 'calendar_events', 'email_notifications', 'confidentiality_agreements', 'client_confidentiality_acceptances']
+  const resources = ['clients', 'packages', 'invoices', 'deliverables', 'deliverable_drive_assets', 'requests', 'extra_services', 'profiles', 'client_team_assignments', 'internal_tasks', 'internal_notes', 'client_resources', 'client_brand_profiles', 'calendar_events', 'email_notifications', 'confidentiality_agreements', 'client_confidentiality_acceptances']
   const entries = await Promise.all(resources.map(async resource => [resource, await listRecords(resource)]))
   const workspace = Object.fromEntries(entries)
   const profileById = new Map(workspace.profiles.map(profile => [profile.id, profile]))

@@ -348,3 +348,28 @@ supabase functions deploy create-client-with-auth-user
 ```
 
 Para el correo opcional utiliza los mismos secretos `RESEND_API_KEY`, `EMAIL_FROM` y `SITE_URL` documentados anteriormente. `SUPABASE_SERVICE_ROLE_KEY` es inyectada por Supabase dentro de la función y no debe configurarse en Vercel ni exponerse en `config.js`.
+
+## 15. Google Drive MVP para entregables
+
+Aplica `supabase/migrations/202606100001_google_drive_assets_mvp.sql`. Esta fase implementa únicamente vínculos manuales y no utiliza OAuth ni almacena tokens de Google.
+
+La tabla `deliverable_drive_assets` permite asociar varios archivos o carpetas a un entregable con:
+
+- Nombre y enlace de Google Drive/Docs.
+- Tipo: archivo, carpeta, post, diseño, video, material u otro.
+- Visibilidad independiente para el cliente.
+- Enlace principal, orden y estado activo/archivado.
+- Campos `drive_item_id` y `mime_type` preparados para una futura integración con Drive API.
+
+El admin gestiona los vínculos en **Admin → Archivos Google Drive**. Los colaboradores pueden vincular Drive desde sus entregables asignados. El cliente solo recibe, mediante `client_deliverables()`, los vínculos activos marcados como `visible_to_client`; no puede consultar la tabla interna directamente.
+
+Los enlaces admitidos deben comenzar con:
+
+```text
+https://drive.google.com/
+https://docs.google.com/
+```
+
+La aprobación y solicitud de cambios continúan realizándose sobre el entregable. Los archivos permanecen alojados y compartidos por Google Drive, por lo que también debes configurar en Drive los permisos de acceso apropiados para cada cliente.
+
+Esta estructura deja preparado `drive_item_id` para una fase posterior con Google Drive API, pero no requiere credenciales Google, OAuth, refresh tokens ni cambios en Vercel durante el MVP.

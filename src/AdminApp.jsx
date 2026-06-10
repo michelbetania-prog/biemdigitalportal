@@ -13,6 +13,7 @@ const adminNav = [
   { id:'clients', label:'Clientes', icon:Users },
   { id:'packages', label:'Paquetes', icon:Package },
   { id:'deliverables', label:'Entregables', icon:Grid2X2 },
+  { id:'drive_assets', label:'Archivos Google Drive', icon:FileText },
   { id:'calendar', label:'Calendario', icon:CalendarDays },
   { id:'billing', label:'Facturación', icon:Receipt },
   { id:'requests', label:'Solicitudes', icon:MessageCircle },
@@ -44,7 +45,7 @@ const labels = {
 }
 
 const emptyWorkspace = {
-  clients:[], packages:[], invoices:[], deliverables:[], requests:[], extra_services:[], profiles:[], client_team_assignments:[], internal_tasks:[], internal_notes:[], client_resources:[], client_brand_profiles:[], calendar_events:[], email_notifications:[], confidentiality_agreements:[], client_confidentiality_acceptances:[],
+  clients:[], packages:[], invoices:[], deliverables:[], deliverable_drive_assets:[], requests:[], extra_services:[], profiles:[], client_team_assignments:[], internal_tasks:[], internal_notes:[], client_resources:[], client_brand_profiles:[], calendar_events:[], email_notifications:[], confidentiality_agreements:[], client_confidentiality_acceptances:[],
 }
 
 function initials(value='BI') {
@@ -172,6 +173,12 @@ const formConfigs = {
       ['visible_to_client','Visible para cliente','checkbox'],['visible_to_account_manager','Visible para agente','checkbox'],['visible_to_designer','Visible para diseño','checkbox'],['visible_to_social_media','Visible para social media','checkbox'],['visible_to_video_editor','Visible para video','checkbox'],['internal_only','Solo interno','checkbox'],
     ],
   },
+  deliverable_drive_assets: {
+    title:'vínculo de Google Drive', fields:[
+      ['deliverable_id','Entregable','deliverables',true],['name','Nombre del archivo o carpeta','text',true],['drive_url','Enlace de Google Drive','url',true],
+      ['asset_type','Tipo','select',true,['file','folder','post','design','video','material','other']],['mime_type','Tipo MIME','text'],['sort_order','Orden','number'],['status','Estado','select',true,['active','archived']],['visible_to_client','Visible para cliente','checkbox'],['is_primary','Enlace principal','checkbox'],
+    ],
+  },
   requests: {
     title:'solicitud', fields:[
       ['client_id','Cliente','clients',true],['extra_service_id','Servicio adicional','extra_services'],['assigned_to','Responsable','profiles'],['request_type','Tipo de solicitud','text',true],
@@ -229,6 +236,7 @@ function relationOptions(type, data) {
   if(type==='packages') return data.packages.map(item=>[item.id,item.name])
   if(type==='profiles') return data.profiles.filter(item=>['admin','account_manager','designer','social_media','video_editor'].includes(item.role)).map(item=>[item.id,item.full_name||item.email])
   if(type==='staff_profiles') return data.profiles.filter(item=>['account_manager','designer','social_media','video_editor'].includes(item.role)).map(item=>[item.id,`${item.full_name||item.email} · ${labels[item.role]}`])
+  if(type==='deliverables') return data.deliverables.map(item=>[item.id,`${item.name} · ${item.clients?.brand_name||'Cliente'}`])
   if(type==='extra_services') return data.extra_services.map(item=>[item.id,item.name])
   return []
 }
@@ -240,7 +248,7 @@ function normalizeValue(field, value) {
   return value
 }
 
-const integerFields = new Set(['graphic_pieces','reels','stories','carousels','meetings','package_usage'])
+const integerFields = new Set(['graphic_pieces','reels','stories','carousels','meetings','package_usage','sort_order'])
 const decimalFields = new Set(['monthly_price','amount','price_from'])
 const nonNegativeFields = new Set([...integerFields, ...decimalFields])
 
@@ -249,6 +257,7 @@ const createDefaults = {
   packages: { monthly_price:0, graphic_pieces:0, reels:0, stories:0, carousels:0, meetings:0, includes_monthly_report:true, is_active:true },
   invoices: { amount:0, currency:'USD', status:'pending' },
   deliverables: { status:'pending', priority:'medium' },
+  deliverable_drive_assets: { asset_type:'file', sort_order:0, status:'active', visible_to_client:false, is_primary:false },
   requests: { status:'new', priority:'medium' },
   internal_tasks: { status:'pending', priority:'medium', visible_to_account_manager:true, internal_only:true },
   client_team_assignments: { is_active:true },
@@ -268,7 +277,7 @@ function payloadFromForm(resource, form) {
   const fieldLabels=Object.fromEntries(config.fields.map(([name,label])=>[name,label]))
   const formData=new FormData(form)
   const payload={}
-  const booleans=new Set(['includes_monthly_report','is_active','visible_to_client','visible_to_admin','visible_to_account_manager','visible_to_designer','visible_to_social_media','visible_to_video_editor','internal_only','client_suggestions_enabled'])
+  const booleans=new Set(['includes_monthly_report','is_active','visible_to_client','visible_to_admin','visible_to_account_manager','visible_to_designer','visible_to_social_media','visible_to_video_editor','internal_only','client_suggestions_enabled','is_primary'])
   for(const [name,,type] of config.fields){
     if(booleans.has(name)){ payload[name]=formData.get(name)==='on'; continue }
     if(type==='file'){ payload[name]=formData.get(name); continue }
@@ -288,6 +297,7 @@ function payloadFromForm(resource, form) {
     }
     if(value===''||value===null){ payload[name]=null; continue }
     payload[name]=typeof value==='string' ? value.trim() : value
+    if(name==='drive_url'&&!/^https:\/\/(drive|docs)\.google\.com\//i.test(value)) throw new Error('El enlace debe pertenecer a Google Drive o Google Docs.')
     if(['scheduled_at','start_time','end_time'].includes(name)&&value) payload[name]=new Date(value).toISOString()
   }
   if(resource==='invoices'&&!payload.currency) payload.currency='USD'
@@ -301,6 +311,11 @@ function CrudModal({ resource, record, data, onClose, onSave, error, saving }) {
     event.preventDefault()
     try {
       const payload=payloadFromForm(resource,event.currentTarget)
+      if(resource==='deliverable_drive_assets'){
+        const deliverable=data.deliverables.find(item=>item.id===payload.deliverable_id)
+        if(!deliverable)throw new Error('Selecciona un entregable válido.')
+        payload.client_id=deliverable.client_id
+      }
       if(resource==='client_brand_profiles'&&payload.brand_logo_file?.size){
         payload.brand_logo_url=await uploadAdminBrandLogo(payload.client_id||record.client_id,payload.brand_logo_file)
       }
@@ -314,7 +329,7 @@ function CrudModal({ resource, record, data, onClose, onSave, error, saving }) {
     if(type==='textarea'||type==='lines') return <label className="span-two" key={name}>{label}<textarea name={name} value={value}/></label>
     if(type==='checkbox') return <label className="crud-checkbox span-two" key={name}><input type="checkbox" name={name} checked={record ? Boolean(record[name]) : !['visible_to_client','visible_to_designer','visible_to_social_media','visible_to_video_editor'].includes(name)}/><span><strong>{label}</strong><small>Activa o desactiva esta opción.</small></span></label>
     if(type==='select') return <label key={name}>{label}<select name={name} required={required}>{values.map(option=><option value={option} selected={value===option} key={option}>{categoryLabels[option]||labels[option]||option}</option>)}</select></label>
-    if(['clients','packages','profiles','staff_profiles','extra_services'].includes(type)) return <label key={name}>{label}<select name={name} required={required}><option value="">Sin asignar</option>{relationOptions(type,data).map(([id,text])=><option value={id} selected={value===id} key={id}>{text}</option>)}</select></label>
+    if(['clients','packages','profiles','staff_profiles','extra_services','deliverables'].includes(type)) return <label key={name}>{label}<select name={name} required={required}><option value="">Sin asignar</option>{relationOptions(type,data).map(([id,text])=><option value={id} selected={value===id} key={id}>{text}</option>)}</select></label>
     return <label key={name}>{label}<input name={name} type={type} value={value} required={required} min={nonNegativeFields.has(name)?'0':undefined} step={integerFields.has(name)?'1':type==='number'?'0.01':undefined} inputMode={type==='number'?'decimal':undefined}/></label>
   })}</div>{error&&<div className="data-feedback error modal-error"><AlertTriangle size={16}/>{error}</div>}<footer><button type="button" className="admin-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" className="admin-primary" disabled={saving}>{saving?'Guardando en Supabase...':editing?'Guardar cambios':'Crear registro'}</button></footer></form></div>
 }
@@ -415,6 +430,12 @@ const invoiceColumns=[
   {key:'package',label:'Paquete',render:item=>item.packages?.name||'—'},{key:'amount',label:'Monto',render:item=><strong>{formatMoney(item.amount,item.currency)}</strong>},
   {key:'due_date',label:'Vencimiento',render:item=>formatDate(item.due_date)},{key:'status',label:'Estado',render:item=><Badge value={item.status}/>},{key:'payment_method',label:'Método'},
 ]
+const driveAssetColumns=[
+  {key:'name',label:'Archivo o carpeta',render:item=><div><strong>{item.name}</strong><div className="muted-cell">{item.asset_type}</div></div>},
+  {key:'deliverable',label:'Entregable',render:item=>item.deliverable?.name||'—'}, {key:'client',label:'Cliente',render:item=>item.client?.brand_name||'—'},
+  {key:'drive_url',label:'Google Drive',render:item=><a href={item.drive_url} target="_blank" rel="noopener noreferrer">Abrir en Drive</a>},
+  {key:'visible_to_client',label:'Cliente',render:item=><Badge value={item.visible_to_client?'active':'paused'}/>}, {key:'status',label:'Estado',render:item=><Badge value={item.status}/>},
+]
 const deliverableColumns=[
   {key:'name',label:'Entregable',render:item=><strong>{item.name}</strong>},{key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},
   {key:'assigned_to',label:'Responsable',render:item=>item.assignee?.full_name||'Sin asignar'},{key:'content_type',label:'Tipo'},
@@ -511,7 +532,7 @@ export default function AdminApp({ profile, onSignOut }) {
     dashboard:<Dashboard {...pageProps} setActive={setActive} profile={profile}/>,
     clients:<ClientsPage {...pageProps}/>,
     packages:<EntityTablePage {...pageProps} resource="packages" title="Paquetes" eyebrow="OFERTA REAL" copy="Gestiona los planes contratables de la agencia." columns={packageColumns}/>,
-    deliverables:<EntityTablePage {...pageProps} resource="deliverables" title="Entregables" eyebrow="PRODUCCIÓN REAL" copy="Administra piezas, responsables, archivos y estados." columns={deliverableColumns} filters={['Cliente','Estado','Responsable']}/>,
+    deliverables:<EntityTablePage {...pageProps} resource="deliverables" title="Entregables" eyebrow="PRODUCCIÓN REAL" copy="Administra piezas, responsables, archivos y estados." columns={deliverableColumns} filters={['Cliente','Estado','Responsable']}/>, drive_assets:<EntityTablePage {...pageProps} resource="deliverable_drive_assets" title="Archivos Google Drive" eyebrow="BIBLIOTECA VINCULADA" copy="Vincula archivos y carpetas de Drive a entregables y controla su visibilidad para el cliente." columns={driveAssetColumns} filters={['Cliente','Entregable','Visibilidad']}/>,
     calendar:<CalendarPage {...pageProps}/>,
     billing:<EntityTablePage {...pageProps} resource="invoices" title="Facturación" eyebrow="CONTROL FINANCIERO" copy="Gestiona facturas persistentes y su estado de pago." columns={invoiceColumns} filters={['Estado','Cliente']}/>,
     requests:<EntityTablePage {...pageProps} resource="requests" title="Solicitudes" eyebrow="PETICIONES DEL PORTAL" copy="Revisa y administra solicitudes reales de clientes." columns={requestColumns} filters={['Estado','Prioridad']}/>,
