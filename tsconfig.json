@@ -19,6 +19,7 @@
     "src/mini-react.js",
     "src/data/account-data.js",
     "src/AdminApp.jsx",
+    "src/PortalBrand.jsx",
     "src/AuthApp.jsx",
     "src/FirstLoginConfidentialityScreen.jsx",
     "src/ClientSetupScreen.jsx",
@@ -33,6 +34,7 @@
     "src/ClientPortalApp.jsx",
     "src/GuideExample.jsx",
     "src/AdminClientPreview.jsx",
-    "src/lib/portal-api.js"
+    "src/lib/portal-api.js",
+    "src/lib/portal-settings.js"
   ]
 }

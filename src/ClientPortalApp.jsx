@@ -9,6 +9,8 @@ import {
   reviewClientDeliverable, saveBrandBasics, saveNotificationPreferences, uploadBrandLogo,
 } from './lib/portal-api.js'
 import GuideExample from './GuideExample.jsx'
+import PortalBrand from './PortalBrand.jsx'
+import { getPortalSettings } from './lib/portal-settings.js'
 
 const empty={account:null,brand:null,events:[],deliverables:[],invoices:[],requests:[],tasks:[],resources:[],services:[],preferences:null}
 const labels={pending:'Pendiente',paid:'Pagada',overdue:'Vencida',approved:'Aprobado',published:'Publicado',client_review:'Por revisar',changes_requested:'Cambios solicitados',scheduled:'Programada',reschedule_requested:'Reagenda solicitada',cancelled:'Cancelada',completed:'Completada',new:'Nueva',in_review:'En revisión'}
@@ -27,13 +29,13 @@ export function ClientPortalLayout({brand,active,setActive,menu,setMenu,preview,
   return <div className={`client-portal-shell ${preview?'is-preview':''}`}>
     {preview&&<AdminPreviewBar clientName={brand?.brand_name} onExit={onExitPreview}/>}
     <aside className={menu?'open':''}>
-      <header><strong>biem.</strong><button aria-label="Cerrar menú" onClick={()=>setMenu(false)}><X/></button></header>
+      <header><PortalBrand/><button aria-label="Cerrar menú" onClick={()=>setMenu(false)}><X/></button></header>
       <div className="portal-brand-switch"><LogoAvatar brand={brand}/><div><small>PORTAL PRIVADO</small><strong>{brand?.brand_name||'Tu marca'}</strong></div></div>
       <nav>{navItems.map(([id,label,Icon])=><button className={active===id?'active':''} onClick={()=>{setActive(id);setMenu(false)}} key={id}><Icon size={18}/><span>{label}</span></button>)}</nav>
       {!preview&&<button className="portal-signout" onClick={onSignOut}><LogOut size={17}/>Cerrar sesión</button>}
     </aside>
     <main>
-      <header className="portal-topbar"><button aria-label="Abrir menú" onClick={()=>setMenu(true)}><Menu/></button><div><small>BIEM DIGITAL</small><strong>{navItems.find(item=>item[0]===active)?.[1]}</strong></div><LogoAvatar brand={brand} size="small"/></header>
+      <header className="portal-topbar"><button aria-label="Abrir menú" onClick={()=>setMenu(true)}><Menu/></button><div><small>{getPortalSettings().agency_name.toUpperCase()}</small><strong>{navItems.find(item=>item[0]===active)?.[1]}</strong></div><LogoAvatar brand={brand} size="small"/></header>
       <div className="client-portal-content">{children}</div>
     </main>
     {menu&&<div className="portal-overlay" onClick={()=>setMenu(false)}/>}
