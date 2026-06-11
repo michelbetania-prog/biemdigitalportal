@@ -15,9 +15,13 @@ export async function loadPortalWorkspace(profile) {
 }
 
 export async function loadAdminClientPreview(clientId) {
-  const {data,error}=await supabase.rpc('admin_client_preview',{p_client_id:clientId})
-  if(error)throw new Error(error.message)
-  return data
+  const [preview,packages]=await Promise.all([
+    supabase.rpc('admin_client_preview',{p_client_id:clientId}),
+    supabase.rpc('active_packages'),
+  ])
+  if(preview.error)throw new Error(preview.error.message)
+  if(packages.error)throw new Error(packages.error.message)
+  return {...preview.data,packages:packages.data||[]}
 }
 
 export async function saveBrandBasics(payload) {
