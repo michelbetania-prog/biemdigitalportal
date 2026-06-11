@@ -35,6 +35,7 @@
     "src/GuideExample.jsx",
     "src/AdminClientPreview.jsx",
     "src/lib/portal-api.js",
-    "src/lib/portal-settings.js"
+    "src/lib/portal-settings.js",
+    "src/lib/package-api.js"
   ]
 }
