@@ -20,7 +20,7 @@ const selects = {
 
 const ordering = {
   clients: ['brand_name', true],
-  packages: ['name', true],
+  packages: ['display_order', true],
   invoices: ['due_date', false],
   deliverables: ['due_date', true],
   deliverable_drive_assets: ['created_at', false],

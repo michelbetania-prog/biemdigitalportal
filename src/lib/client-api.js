@@ -8,7 +8,7 @@ function fail(error,fallback){if(error)throw new Error(error.message||fallback)}
 
 export async function loadClientWorkspace(profile) {
   assertClient(profile)
-  const [account,deliverables,invoices,requests,tasks,resources,services]=await Promise.all([
+  const [account,deliverables,invoices,requests,tasks,resources,services,packages]=await Promise.all([
     supabase.rpc('client_account_overview').single(),
     supabase.rpc('client_deliverables'),
     supabase.rpc('client_invoices'),
@@ -16,9 +16,10 @@ export async function loadClientWorkspace(profile) {
     supabase.rpc('client_visible_tasks'),
     supabase.rpc('client_visible_resources'),
     supabase.from('extra_services').select('id,name,category,description,price_from,estimated_delivery').eq('is_active',true),
+    supabase.rpc('active_packages'),
   ])
-  for(const [result,label] of [[account,'cuenta'],[deliverables,'entregables'],[invoices,'facturas'],[requests,'solicitudes'],[tasks,'próximos pasos'],[resources,'recomendaciones'],[services,'servicios']])fail(result.error,`No se pudo cargar ${label}.`)
-  return {account:account.data,deliverables:deliverables.data||[],invoices:invoices.data||[],requests:requests.data||[],tasks:tasks.data||[],resources:resources.data||[],services:services.data||[]}
+  for(const [result,label] of [[account,'cuenta'],[deliverables,'entregables'],[invoices,'facturas'],[requests,'solicitudes'],[tasks,'próximos pasos'],[resources,'recomendaciones'],[services,'servicios'],[packages,'paquetes']])fail(result.error,`No se pudo cargar ${label}.`)
+  return {account:account.data,deliverables:deliverables.data||[],invoices:invoices.data||[],requests:requests.data||[],tasks:tasks.data||[],resources:resources.data||[],services:services.data||[],packages:packages.data||[]}
 }
 
 export async function reviewClientDeliverable(id,action,comment=''){

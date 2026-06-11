@@ -156,9 +156,9 @@ const formConfigs = {
   },
   packages: {
     title:'paquete', fields:[
-      ['name','Nombre','text',true],['monthly_price','Precio mensual','number',true],['description','Descripción','textarea'],['included_services','Servicios incluidos (uno por línea)','lines'],
+      ['name','Nombre','text',true],['subtitle','Subtítulo','text'],['description','Descripción','textarea'],['price','Precio','number',true],['currency','Moneda','text',true],['billing_period','Periodo de facturación','text',true],['services_included','Servicios incluidos (uno por línea)','lines'],['ideal_for','Ideal para','textarea'],['button_text','Texto del botón','text',true],['display_order','Orden de visualización','number'],['is_featured','Paquete destacado','checkbox'],['is_active','Paquete activo','checkbox'],
       ['graphic_pieces','Piezas gráficas','number'],['reels','Reels','number'],['stories','Historias','number'],['carousels','Carruseles','number'],['meetings','Reuniones','number'],
-      ['support_level','Nivel de soporte','text'],['internal_notes','Notas internas','textarea'],['includes_monthly_report','Incluye reporte mensual','checkbox'],['is_active','Paquete activo','checkbox'],
+      ['support_level','Nivel de soporte','text'],['internal_notes','Notas internas','textarea'],['includes_monthly_report','Incluye reporte mensual','checkbox'],
     ],
   },
   invoices: {
@@ -247,18 +247,18 @@ function relationOptions(type, data) {
 
 function normalizeValue(field, value) {
   if (value === undefined || value === null) return ''
-  if (field === 'included_services') return Array.isArray(value) ? value.join('\n') : ''
+  if (['included_services','services_included'].includes(field)) return Array.isArray(value) ? value.join('\n') : ''
   if (field === 'scheduled_at') return `${value}`.slice(0,16)
   return value
 }
 
-const integerFields = new Set(['graphic_pieces','reels','stories','carousels','meetings','package_usage','sort_order'])
-const decimalFields = new Set(['monthly_price','amount','price_from'])
+const integerFields = new Set(['graphic_pieces','reels','stories','carousels','meetings','package_usage','sort_order','display_order'])
+const decimalFields = new Set(['monthly_price','price','amount','price_from'])
 const nonNegativeFields = new Set([...integerFields, ...decimalFields])
 
 const createDefaults = {
   clients: { status:'active', package_usage:0 },
-  packages: { monthly_price:0, graphic_pieces:0, reels:0, stories:0, carousels:0, meetings:0, includes_monthly_report:true, is_active:true },
+  packages: { price:0, currency:'DOP', billing_period:'Mensual', display_order:0, button_text:'Solicitar este paquete', is_featured:false, graphic_pieces:0, reels:0, stories:0, carousels:0, meetings:0, includes_monthly_report:true, is_active:true },
   invoices: { amount:0, currency:'USD', status:'pending' },
   deliverables: { status:'pending', priority:'medium' },
   deliverable_drive_assets: { asset_type:'file', sort_order:0, status:'active', visible_to_client:false, is_primary:false },
@@ -281,7 +281,7 @@ function payloadFromForm(resource, form) {
   const fieldLabels=Object.fromEntries(config.fields.map(([name,label])=>[name,label]))
   const formData=new FormData(form)
   const payload={}
-  const booleans=new Set(['includes_monthly_report','is_active','visible_to_client','visible_to_admin','visible_to_account_manager','visible_to_designer','visible_to_social_media','visible_to_video_editor','internal_only','client_suggestions_enabled','is_primary'])
+  const booleans=new Set(['includes_monthly_report','is_active','visible_to_client','visible_to_admin','visible_to_account_manager','visible_to_designer','visible_to_social_media','visible_to_video_editor','internal_only','client_suggestions_enabled','is_primary','is_featured'])
   for(const [name,,type] of config.fields){
     if(booleans.has(name)){ payload[name]=formData.get(name)==='on'; continue }
     if(type==='file'){ payload[name]=formData.get(name); continue }
@@ -338,12 +338,12 @@ function CrudModal({ resource, record, data, onClose, onSave, error, saving }) {
   })}</div>{error&&<div className="data-feedback error modal-error"><AlertTriangle size={16}/>{error}</div>}<footer><button type="button" className="admin-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" className="admin-primary" disabled={saving}>{saving?'Guardando en Supabase...':editing?'Guardar cambios':'Crear registro'}</button></footer></form></div>
 }
 
-function RowActions({ canWrite, onEdit, onDelete }) {
+function RowActions({ canWrite, onEdit, onDelete, extraActions=null }) {
   if(!canWrite) return <span className="read-only-cell"><Eye size={14}/>Solo lectura</span>
-  return <div className="table-actions"><button onClick={onEdit}><Edit size={14}/>Editar</button><button className="delete-row" onClick={onDelete}><X size={14}/>Eliminar</button></div>
+  return <div className="table-actions">{extraActions}<button onClick={onEdit}><Edit size={14}/>Editar</button><button className="delete-row" onClick={onDelete}><X size={14}/>Eliminar</button></div>
 }
 
-function EntityTablePage({ resource, workspace, title, eyebrow, copy, columns, filters=[], onCreate=null, createLabel=null }) {
+function EntityTablePage({ resource, workspace, title, eyebrow, copy, columns, filters=[], onCreate=null, createLabel=null, rowActions=null }) {
   const { data, mutate }=workspace
   const [editing,setEditing]=useState(null)
   const [deleting,setDeleting]=useState(null)
@@ -364,7 +364,13 @@ function EntityTablePage({ resource, workspace, title, eyebrow, copy, columns, f
     const result=await mutate(()=>deleteRecord(resource,deleting.id),`${formConfigs[resource].title} eliminado correctamente.`)
     if(result.ok)setDeleting(null)
   }
-  return <div className="admin-page"><AdminHeading eyebrow={eyebrow} title={title} copy={copy} action={canWrite?<button className="admin-primary" onClick={()=>{setFormError('');onCreate?onCreate():setEditing({})}}><Plus size={16}/>{createLabel||`Crear ${formConfigs[resource].title}`}</button>:null}/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><Toolbar placeholder={`Buscar ${title.toLowerCase()}...`} filters={filters}/><div className="admin-table-wrap"><table className="admin-table"><thead><tr>{columns.map(column=><th key={column.key}>{column.label}</th>)}<th></th></tr></thead><tbody>{records.map(record=><tr key={record.id}>{columns.map(column=><td key={column.key}>{column.render?column.render(record):record[column.key]||'—'}</td>)}<td><RowActions canWrite={canWrite} onEdit={()=>{setFormError('');setEditing(record)}} onDelete={()=>setDeleting(record)}/></td></tr>)}{!workspace.loading&&records.length===0&&<tr><td colSpan={columns.length+1}><GuideExample guideKey={`admin.${resource}`} canDismiss={canWrite}/></td></tr>}</tbody></table></div>{editing&&<CrudModal resource={resource} record={editing} data={{...data,setFormError}} onClose={()=>setEditing(null)} onSave={save} error={formError||workspace.error} saving={workspace.mutating}/>} {deleting&&<ConfirmDelete label={deleting.brand_name||deleting.name||deleting.invoice_number||deleting.request_type} onClose={()=>setDeleting(null)} onConfirm={remove}/>}</div>
+  return <div className="admin-page"><AdminHeading eyebrow={eyebrow} title={title} copy={copy} action={canWrite?<button className="admin-primary" onClick={()=>{setFormError('');onCreate?onCreate():setEditing({})}}><Plus size={16}/>{createLabel||`Crear ${formConfigs[resource].title}`}</button>:null}/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><Toolbar placeholder={`Buscar ${title.toLowerCase()}...`} filters={filters}/><div className="admin-table-wrap"><table className="admin-table"><thead><tr>{columns.map(column=><th key={column.key}>{column.label}</th>)}<th></th></tr></thead><tbody>{records.map(record=><tr key={record.id}>{columns.map(column=><td key={column.key}>{column.render?column.render(record):record[column.key]||'—'}</td>)}<td><RowActions canWrite={canWrite} extraActions={rowActions?rowActions(record):null} onEdit={()=>{setFormError('');setEditing(record)}} onDelete={()=>setDeleting(record)}/></td></tr>)}{!workspace.loading&&records.length===0&&<tr><td colSpan={columns.length+1}><GuideExample guideKey={`admin.${resource}`} canDismiss={canWrite}/></td></tr>}</tbody></table></div>{editing&&<CrudModal resource={resource} record={editing} data={{...data,setFormError}} onClose={()=>setEditing(null)} onSave={save} error={formError||workspace.error} saving={workspace.mutating}/>} {deleting&&<ConfirmDelete label={deleting.brand_name||deleting.name||deleting.invoice_number||deleting.request_type} onClose={()=>setDeleting(null)} onConfirm={remove}/>}</div>
+}
+
+function PackagesPage({workspace}){
+  const toggle=(item,field,label)=>workspace.mutate(()=>updateRecord('packages',item.id,{[field]:!item[field]}),`${item.name}: ${label}.`)
+  const actions=item=><><button className="package-table-toggle" onClick={()=>toggle(item,'is_active',item.is_active?'paquete desactivado':'paquete activado')}><Check size={14}/>{item.is_active?'Desactivar':'Activar'}</button><button className="package-table-toggle" onClick={()=>toggle(item,'is_featured',item.is_featured?'destacado removido':'marcado como destacado')}><Sparkles size={14}/>{item.is_featured?'Quitar destacado':'Destacar'}</button></>
+  return <EntityTablePage resource="packages" workspace={workspace} title="Paquetes" eyebrow="OFERTA REAL" copy="Crea, ordena y publica los planes visibles en el portal cliente." columns={packageColumns} rowActions={actions}/>
 }
 
 function Dashboard({ workspace, setActive, profile }) {
@@ -425,9 +431,13 @@ const clientColumns=[
   {key:'package_usage',label:'Uso',render:item=><strong>{item.package_usage||0}</strong>},{key:'preview',label:'Portal',render:item=><button className="admin-secondary" onClick={()=>window.location.assign(`/admin/preview-client/${item.id}`)}><Eye size={14}/>Ver como cliente</button>},
 ]
 const packageColumns=[
-  {key:'name',label:'Paquete',render:item=><strong>{item.name}</strong>},{key:'monthly_price',label:'Precio',render:item=>formatMoney(item.monthly_price)},
-  {key:'included_services',label:'Servicios',render:item=>`${item.included_services?.length||0} incluidos`},{key:'graphic_pieces',label:'Gráficas'},{key:'reels',label:'Reels'},
-  {key:'stories',label:'Historias'},{key:'is_active',label:'Estado',render:item=><Badge value={item.is_active?'active':'paused'}/>},
+  {key:'name',label:'Paquete',render:item=><div><strong>{item.name}</strong><div className="muted-cell">{item.subtitle||'Sin subtítulo'}</div></div>},
+  {key:'price',label:'Precio',render:item=><strong>{formatMoney(item.price??item.monthly_price,item.currency||'DOP')}</strong>},
+  {key:'billing_period',label:'Periodo',render:item=>item.billing_period||'Mensual'},
+  {key:'services_included',label:'Servicios',render:item=>`${item.services_included?.length||item.included_services?.length||0} incluidos`},
+  {key:'display_order',label:'Orden',render:item=><strong>{item.display_order??0}</strong>},
+  {key:'is_featured',label:'Destacado',render:item=><Badge value={item.is_featured?'active':'paused'}/>},
+  {key:'is_active',label:'Estado',render:item=><Badge value={item.is_active?'active':'paused'}/>},
 ]
 const invoiceColumns=[
   {key:'invoice_number',label:'Factura',render:item=><strong>{item.invoice_number}</strong>},{key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},
@@ -561,7 +571,7 @@ export default function AdminApp({ profile, onSignOut }) {
   const pages={
     dashboard:<Dashboard {...pageProps} setActive={setActive} profile={profile}/>,
     clients:<ClientsPage {...pageProps}/>,
-    packages:<EntityTablePage {...pageProps} resource="packages" title="Paquetes" eyebrow="OFERTA REAL" copy="Gestiona los planes contratables de la agencia." columns={packageColumns}/>,
+    packages:<PackagesPage {...pageProps}/>,
     deliverables:<EntityTablePage {...pageProps} resource="deliverables" title="Entregables" eyebrow="PRODUCCIÓN REAL" copy="Administra piezas, responsables, archivos y estados." columns={deliverableColumns} filters={['Cliente','Estado','Responsable']}/>, drive_assets:<EntityTablePage {...pageProps} resource="deliverable_drive_assets" title="Archivos Google Drive" eyebrow="BIBLIOTECA VINCULADA" copy="Vincula archivos y carpetas de Drive a entregables y controla su visibilidad para el cliente." columns={driveAssetColumns} filters={['Cliente','Entregable','Visibilidad']}/>,
     calendar:<CalendarPage {...pageProps}/>,
     billing:<EntityTablePage {...pageProps} resource="invoices" title="Facturación" eyebrow="CONTROL FINANCIERO" copy="Gestiona facturas persistentes y su estado de pago." columns={invoiceColumns} filters={['Estado','Cliente']}/>,

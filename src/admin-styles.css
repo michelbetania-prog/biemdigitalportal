@@ -37,3 +37,4 @@
 @media(max-width:1050px){.theme-editor-grid{grid-template-columns:1fr}.settings-form-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:720px){.settings-section{padding:17px}.settings-section-head{flex-direction:column}.portal-assets-grid,.settings-form-grid,.color-settings-grid,.appearance-settings{grid-template-columns:1fr}.settings-actions{width:100%}.settings-actions button,.settings-section-head>.admin-primary{width:100%}}
 
 .theme-preview.preview-elevated .theme-preview-window article{border-color:transparent;box-shadow:0 12px 28px color-mix(in srgb,var(--portal-primary) 16%,transparent)}.theme-preview.preview-flat .theme-preview-window article{border-color:transparent;box-shadow:none}.theme-preview.preview-dark .theme-preview-window{color-scheme:dark}
+.package-table-toggle{white-space:nowrap}.package-table-toggle:first-child{color:var(--portal-primary,#4b0082)}
