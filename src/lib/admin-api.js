@@ -20,7 +20,7 @@ const selects = {
 
 const ordering = {
   clients: ['brand_name', true],
-  packages: ['name', true],
+  packages: ['display_order', true],
   invoices: ['due_date', false],
   deliverables: ['due_date', true],
   deliverable_drive_assets: ['created_at', false],
@@ -56,11 +56,15 @@ export function readableError(error) {
 export async function listRecords(resource) {
   assertClient()
   const [column, ascending] = ordering[resource] || ['created_at', false]
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from(resource)
     .select(selects[resource] || '*')
     .order(column, { ascending, nullsFirst: false })
 
+  if(error&&resource==='packages'&&(error.code==='42703'||/display_order|schema cache/i.test(error.message||''))){
+    const fallback=await supabase.from(resource).select(selects[resource]||'*').order('name',{ascending:true,nullsFirst:false})
+    data=fallback.data;error=fallback.error
+  }
   if (error) throw new Error(readableError(error))
   return data || []
 }
