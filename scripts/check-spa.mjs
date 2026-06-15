@@ -30,6 +30,7 @@ const requiredAssets = [
   'src/TeamApp.js',
   'src/lib/team-api.js',
   'src/lib/client-api.js',
+  'src/lib/portal-settings.js',
   'src/styles.css',
   'src/admin-styles.css',
 ]

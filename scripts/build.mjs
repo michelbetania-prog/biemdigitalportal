@@ -19,7 +19,7 @@ await cp(path.join(root, 'src', 'styles.css'), path.join(output, 'src', 'styles.
 await cp(path.join(root, 'src', 'admin-styles.css'), path.join(output, 'src', 'admin-styles.css'))
 await cp(path.join(root, 'src', 'biem-theme.css'), path.join(output, 'src', 'biem-theme.css'))
 
-for (const asset of ['App.js', 'AdminApp.js', 'AuthApp.js', 'FirstLoginConfidentialityScreen.js', 'ClientSetupScreen.js', 'TeamApp.js', 'ClientPortalApp.js', 'GuideExample.js', 'AdminClientPreview.js', 'icons.js', 'main.js', 'mini-react.js', 'data/account-data.js', 'lib/auth.js', 'lib/supabase.js', 'lib/admin-api.js', 'lib/confidentiality.js', 'lib/team-api.js', 'lib/client-api.js', 'lib/portal-api.js']) {
+for (const asset of ['App.js', 'AdminApp.js', 'AuthApp.js', 'FirstLoginConfidentialityScreen.js', 'ClientSetupScreen.js', 'TeamApp.js', 'ClientPortalApp.js', 'GuideExample.js', 'AdminClientPreview.js', 'icons.js', 'main.js', 'mini-react.js', 'data/account-data.js', 'lib/auth.js', 'lib/supabase.js', 'lib/admin-api.js', 'lib/confidentiality.js', 'lib/team-api.js', 'lib/client-api.js', 'lib/portal-api.js', 'lib/portal-settings.js']) {
   const source = await readFile(path.join(compiled, asset), 'utf8')
   const browserReady = source
     .replaceAll("'./App.jsx'", "'./App.js'")
