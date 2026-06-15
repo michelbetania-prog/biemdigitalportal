@@ -1,5 +1,4 @@
 import { createElement, Fragment, useEffect, useState } from './mini-react.js'
-import PortalBrand from './PortalBrand.jsx'
 import { ArrowRight, Check, Lock, Shield } from './icons.jsx'
 import { acceptActiveConfidentiality, clientDestination, getConfidentialityStatus } from './lib/confidentiality.js'
 
@@ -41,7 +40,7 @@ export default function FirstLoginConfidentialityScreen({ profile, children }) {
   }
 
   return <main className="first-access-shell">
-    <header><Lock size={14}/><span>Portal privado de cliente</span><PortalBrand variant="icon" showName={false}/></header>
+    <header><Lock size={14}/><span>Portal privado de cliente</span><strong>biem.</strong></header>
     <form className="first-access-card" onSubmit={submit}>
       <div className="first-access-lock"><Shield size={27}/></div>
       <span className="admin-eyebrow">ACCESO PRIVADO · VERSIÓN {status.agreement.version}</span>

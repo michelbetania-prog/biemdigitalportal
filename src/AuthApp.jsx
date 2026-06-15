@@ -8,8 +8,6 @@ import FirstLoginConfidentialityScreen from './FirstLoginConfidentialityScreen.j
 import TeamApp from './TeamApp.jsx'
 import { destinationForRole, getAuthContext, signInWithPassword, signOut, subscribeToAuthChanges, teamRoleRoutes } from './lib/auth.js'
 import { supabase } from './lib/supabase.js'
-import PortalBrand from './PortalBrand.jsx'
-import { getPortalSettings } from './lib/portal-settings.js'
 
 let authRequest
 let authListenerStarted = false
@@ -32,7 +30,6 @@ function AccessDenied({ profile }) {
 }
 
 function LoginPage({ context }) {
-  const portalSettings=getPortalSettings()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [visible, setVisible] = useState(false)
@@ -76,7 +73,7 @@ function LoginPage({ context }) {
   }
 
   return <div className="admin-login-shell">
-    <div className="admin-login-brand"><PortalBrand className="login-portal-brand"/><div><span>PORTAL SEGURO</span><h1>{portalSettings.welcome_message}</h1><p>Accede al espacio correspondiente a tu cuenta y rol dentro de {portalSettings.agency_name}.</p></div><small>© 2026 {portalSettings.commercial_name||portalSettings.agency_name} · Acceso confidencial</small></div>
+    <div className="admin-login-brand"><div className="admin-logo"><span className="logo-mark"><i/><i/><i/></span><span>biem<span>.</span></span></div><div><span>PORTAL SEGURO</span><h1>Tu trabajo.<br/>Tu equipo.<br/><i>En un solo lugar.</i></h1><p>Accede al espacio correspondiente a tu cuenta y rol dentro de Biem Digital.</p></div><small>© 2026 Biem Digital · Acceso confidencial</small></div>
     <div className="admin-login-panel"><form className="login-card" onSubmit={submit}><div className="login-lock"><Lock size={20}/></div><span className="admin-eyebrow">ACCESO AL PORTAL</span><h2>Bienvenido de nuevo</h2><p>Ingresa con el correo asociado a tu cuenta.</p><label>Correo electrónico<input data-focus-id="login-email" type="email" value={email} onChange={event=>setEmail(event.target.value)} placeholder="tu@empresa.com" required/></label><label>Contraseña<div className="password-input"><input data-focus-id="login-password" type={visible?'text':'password'} value={password} onChange={event=>setPassword(event.target.value)} required/><button type="button" onClick={()=>setVisible(!visible)}><Eye size={17}/></button></div></label>{error&&<div className="auth-error">{error}</div>}<div className="login-meta"><label><input type="checkbox"/> Recordarme</label><button type="button">¿Olvidaste tu contraseña?</button></div><button className="admin-primary login-submit" type="submit" disabled={loading||!email||!password}>{loading?'Ingresando...':<>Ingresar al portal <ArrowRight size={17}/></>}</button><div className="demo-access"><Shield size={15}/><span><strong>Protegido por Supabase Auth</strong>Tu acceso y permisos se validan en cada solicitud.</span></div></form></div>
   </div>
 }

@@ -1,5 +1,4 @@
 import { supabase } from './supabase.js'
-import { loadActivePackages } from './package-api.js'
 import { createClientRequest, loadClientWorkspace, reviewClientDeliverable, uploadClientMaterial } from './client-api.js'
 
 export async function loadPortalWorkspace(profile) {
@@ -16,12 +15,9 @@ export async function loadPortalWorkspace(profile) {
 }
 
 export async function loadAdminClientPreview(clientId) {
-  const [preview,packages]=await Promise.all([
-    supabase.rpc('admin_client_preview',{p_client_id:clientId}),
-    loadActivePackages(),
-  ])
-  if(preview.error)throw new Error(preview.error.message)
-  return {...preview.data,packages:packages||[]}
+  const {data,error}=await supabase.rpc('admin_client_preview',{p_client_id:clientId})
+  if(error)throw new Error(error.message)
+  return data
 }
 
 export async function saveBrandBasics(payload) {

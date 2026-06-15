@@ -7,8 +7,6 @@ import {
   Send, Settings, Shield, Sparkles, UserRound, Users, X
 } from './icons.jsx'
 import GuideExample from './GuideExample.jsx'
-import PortalBrand from './PortalBrand.jsx'
-import { defaultPortalSettings, getPortalSettings, savePortalSettings, uploadPortalAsset } from './lib/portal-settings.js'
 import { activateConfidentialityAgreement, createRecord, listRecords, deleteRecord, loadAdminWorkspace, loadConfidentialityAdmin, updateRecord, inviteTeamMember, uploadAdminBrandLogo, createClientWithAuthUser } from './lib/admin-api.js'
 
 const adminNav = [
@@ -107,7 +105,7 @@ function useWorkspace() {
 }
 
 function AdminLogo() {
-  return <PortalBrand className="admin-logo" admin/>
+  return <div className="admin-logo"><span className="logo-mark"><i/><i/><i/></span><span>biem<span>.</span></span><b>ADMIN</b></div>
 }
 
 function Badge({ value, type='status' }) {
@@ -115,19 +113,18 @@ function Badge({ value, type='status' }) {
 }
 
 function AdminSidebar({ active, setActive, open, setOpen, profile, onLogout }) {
-  const navigate=id=>{setActive(id);window.history.pushState({},'',`/admin/${id}`);setOpen(false)}
   const allowed = rolePermissions[profile.role] || []
   return <aside className={`admin-sidebar ${open?'open':''}`}>
     <div className="admin-sidebar-head"><AdminLogo/><button className="admin-mobile-close" onClick={()=>setOpen(false)}><X size={20}/></button></div>
-    <div className="admin-workspace"><div className="admin-workspace-icon"><PortalBrand variant="icon" showName={false}/></div><div><small>ESPACIO DE TRABAJO</small><strong>{getPortalSettings().agency_name}</strong></div><ChevronDown size={15}/></div>
-    <nav><span>GESTIÓN</span>{adminNav.filter(item=>allowed.includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={active===item.id?'active':''} onClick={()=>navigate(item.id)}><Icon size={18}/><b>{item.label}</b></button>})}</nav>
+    <div className="admin-workspace"><div className="admin-workspace-icon">BD</div><div><small>ESPACIO DE TRABAJO</small><strong>Biem Digital</strong></div><ChevronDown size={15}/></div>
+    <nav><span>GESTIÓN</span>{adminNav.filter(item=>allowed.includes(item.id)).map(item=>{const Icon=item.icon;return <button key={item.id} className={active===item.id?'active':''} onClick={()=>{setActive(item.id);setOpen(false)}}><Icon size={18}/><b>{item.label}</b></button>})}</nav>
     <div className="admin-sidebar-user"><div className="team-avatar">{initials(profile.full_name || profile.email)}</div><div><strong>{profile.full_name || profile.email}</strong><span>{labels[profile.role]}</span></div><button onClick={onLogout} title="Cerrar sesión"><LogOut size={17}/></button></div>
   </aside>
 }
 
 function AdminTopbar({ active, setMenuOpen, profile, onRefresh }) {
   const title=adminNav.find(item=>item.id===active)?.label || 'Dashboard'
-  return <header className="admin-topbar"><button className="admin-menu-button" onClick={()=>setMenuOpen(true)}><Menu size={21}/></button><div><span>{getPortalSettings().agency_name.toUpperCase()} <i>/</i></span><strong>{title}</strong></div><div className="admin-top-actions"><button className="global-search" onClick={onRefresh}><Search size={16}/><span>Actualizar datos desde Supabase</span><kbd>↻</kbd></button><button className="admin-icon-button"><Bell size={18}/></button><div className="role-switch"><div className="team-avatar">{initials(profile.full_name || profile.email)}</div><span>{labels[profile.role]}</span></div></div></header>
+  return <header className="admin-topbar"><button className="admin-menu-button" onClick={()=>setMenuOpen(true)}><Menu size={21}/></button><div><span>BIEM DIGITAL <i>/</i></span><strong>{title}</strong></div><div className="admin-top-actions"><button className="global-search" onClick={onRefresh}><Search size={16}/><span>Actualizar datos desde Supabase</span><kbd>↻</kbd></button><button className="admin-icon-button"><Bell size={18}/></button><div className="role-switch"><div className="team-avatar">{initials(profile.full_name || profile.email)}</div><span>{labels[profile.role]}</span></div></div></header>
 }
 
 function AdminHeading({ eyebrow, title, copy, action }) {
@@ -156,9 +153,9 @@ const formConfigs = {
   },
   packages: {
     title:'paquete', fields:[
-      ['name','Nombre','text',true],['subtitle','Subtítulo','text'],['description','Descripción','textarea'],['price','Precio','number',true],['currency','Moneda','text',true],['billing_period','Periodo de facturación','text',true],['services_included','Servicios incluidos (uno por línea)','lines'],['ideal_for','Ideal para','textarea'],['button_text','Texto del botón','text',true],['display_order','Orden de visualización','number'],['is_featured','Paquete destacado','checkbox'],['is_active','Paquete activo','checkbox'],
+      ['name','Nombre','text',true],['monthly_price','Precio mensual','number',true],['description','Descripción','textarea'],['included_services','Servicios incluidos (uno por línea)','lines'],
       ['graphic_pieces','Piezas gráficas','number'],['reels','Reels','number'],['stories','Historias','number'],['carousels','Carruseles','number'],['meetings','Reuniones','number'],
-      ['support_level','Nivel de soporte','text'],['internal_notes','Notas internas','textarea'],['includes_monthly_report','Incluye reporte mensual','checkbox'],
+      ['support_level','Nivel de soporte','text'],['internal_notes','Notas internas','textarea'],['includes_monthly_report','Incluye reporte mensual','checkbox'],['is_active','Paquete activo','checkbox'],
     ],
   },
   invoices: {
@@ -247,18 +244,18 @@ function relationOptions(type, data) {
 
 function normalizeValue(field, value) {
   if (value === undefined || value === null) return ''
-  if (['included_services','services_included'].includes(field)) return Array.isArray(value) ? value.join('\n') : ''
+  if (field === 'included_services') return Array.isArray(value) ? value.join('\n') : ''
   if (field === 'scheduled_at') return `${value}`.slice(0,16)
   return value
 }
 
-const integerFields = new Set(['graphic_pieces','reels','stories','carousels','meetings','package_usage','sort_order','display_order'])
-const decimalFields = new Set(['monthly_price','price','amount','price_from'])
+const integerFields = new Set(['graphic_pieces','reels','stories','carousels','meetings','package_usage','sort_order'])
+const decimalFields = new Set(['monthly_price','amount','price_from'])
 const nonNegativeFields = new Set([...integerFields, ...decimalFields])
 
 const createDefaults = {
   clients: { status:'active', package_usage:0 },
-  packages: { price:0, currency:'DOP', billing_period:'Mensual', display_order:0, button_text:'Solicitar este paquete', is_featured:false, graphic_pieces:0, reels:0, stories:0, carousels:0, meetings:0, includes_monthly_report:true, is_active:true },
+  packages: { monthly_price:0, graphic_pieces:0, reels:0, stories:0, carousels:0, meetings:0, includes_monthly_report:true, is_active:true },
   invoices: { amount:0, currency:'USD', status:'pending' },
   deliverables: { status:'pending', priority:'medium' },
   deliverable_drive_assets: { asset_type:'file', sort_order:0, status:'active', visible_to_client:false, is_primary:false },
@@ -281,7 +278,7 @@ function payloadFromForm(resource, form) {
   const fieldLabels=Object.fromEntries(config.fields.map(([name,label])=>[name,label]))
   const formData=new FormData(form)
   const payload={}
-  const booleans=new Set(['includes_monthly_report','is_active','visible_to_client','visible_to_admin','visible_to_account_manager','visible_to_designer','visible_to_social_media','visible_to_video_editor','internal_only','client_suggestions_enabled','is_primary','is_featured'])
+  const booleans=new Set(['includes_monthly_report','is_active','visible_to_client','visible_to_admin','visible_to_account_manager','visible_to_designer','visible_to_social_media','visible_to_video_editor','internal_only','client_suggestions_enabled','is_primary'])
   for(const [name,,type] of config.fields){
     if(booleans.has(name)){ payload[name]=formData.get(name)==='on'; continue }
     if(type==='file'){ payload[name]=formData.get(name); continue }
@@ -338,12 +335,12 @@ function CrudModal({ resource, record, data, onClose, onSave, error, saving }) {
   })}</div>{error&&<div className="data-feedback error modal-error"><AlertTriangle size={16}/>{error}</div>}<footer><button type="button" className="admin-secondary" onClick={onClose} disabled={saving}>Cancelar</button><button type="submit" className="admin-primary" disabled={saving}>{saving?'Guardando en Supabase...':editing?'Guardar cambios':'Crear registro'}</button></footer></form></div>
 }
 
-function RowActions({ canWrite, onEdit, onDelete, extraActions=null }) {
+function RowActions({ canWrite, onEdit, onDelete }) {
   if(!canWrite) return <span className="read-only-cell"><Eye size={14}/>Solo lectura</span>
-  return <div className="table-actions">{extraActions}<button onClick={onEdit}><Edit size={14}/>Editar</button><button className="delete-row" onClick={onDelete}><X size={14}/>Eliminar</button></div>
+  return <div className="table-actions"><button onClick={onEdit}><Edit size={14}/>Editar</button><button className="delete-row" onClick={onDelete}><X size={14}/>Eliminar</button></div>
 }
 
-function EntityTablePage({ resource, workspace, title, eyebrow, copy, columns, filters=[], onCreate=null, createLabel=null, rowActions=null }) {
+function EntityTablePage({ resource, workspace, title, eyebrow, copy, columns, filters=[], onCreate=null, createLabel=null }) {
   const { data, mutate }=workspace
   const [editing,setEditing]=useState(null)
   const [deleting,setDeleting]=useState(null)
@@ -364,13 +361,7 @@ function EntityTablePage({ resource, workspace, title, eyebrow, copy, columns, f
     const result=await mutate(()=>deleteRecord(resource,deleting.id),`${formConfigs[resource].title} eliminado correctamente.`)
     if(result.ok)setDeleting(null)
   }
-  return <div className="admin-page"><AdminHeading eyebrow={eyebrow} title={title} copy={copy} action={canWrite?<button className="admin-primary" onClick={()=>{setFormError('');onCreate?onCreate():setEditing({})}}><Plus size={16}/>{createLabel||`Crear ${formConfigs[resource].title}`}</button>:null}/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><Toolbar placeholder={`Buscar ${title.toLowerCase()}...`} filters={filters}/><div className="admin-table-wrap"><table className="admin-table"><thead><tr>{columns.map(column=><th key={column.key}>{column.label}</th>)}<th></th></tr></thead><tbody>{records.map(record=><tr key={record.id}>{columns.map(column=><td key={column.key}>{column.render?column.render(record):record[column.key]||'—'}</td>)}<td><RowActions canWrite={canWrite} extraActions={rowActions?rowActions(record):null} onEdit={()=>{setFormError('');setEditing(record)}} onDelete={()=>setDeleting(record)}/></td></tr>)}{!workspace.loading&&records.length===0&&<tr><td colSpan={columns.length+1}><GuideExample guideKey={`admin.${resource}`} canDismiss={canWrite}/></td></tr>}</tbody></table></div>{editing&&<CrudModal resource={resource} record={editing} data={{...data,setFormError}} onClose={()=>setEditing(null)} onSave={save} error={formError||workspace.error} saving={workspace.mutating}/>} {deleting&&<ConfirmDelete label={deleting.brand_name||deleting.name||deleting.invoice_number||deleting.request_type} onClose={()=>setDeleting(null)} onConfirm={remove}/>}</div>
-}
-
-function PackagesPage({workspace}){
-  const toggle=(item,field,label)=>workspace.mutate(()=>updateRecord('packages',item.id,{[field]:!item[field]}),`${item.name}: ${label}.`)
-  const actions=item=><><button className="package-table-toggle" onClick={()=>toggle(item,'is_active',item.is_active?'paquete desactivado':'paquete activado')}><Check size={14}/>{item.is_active?'Desactivar':'Activar'}</button><button className="package-table-toggle" onClick={()=>toggle(item,'is_featured',item.is_featured?'destacado removido':'marcado como destacado')}><Sparkles size={14}/>{item.is_featured?'Quitar destacado':'Destacar'}</button></>
-  return <EntityTablePage resource="packages" workspace={workspace} title="Paquetes" eyebrow="OFERTA REAL" copy="Crea, ordena y publica los planes visibles en el portal cliente." columns={packageColumns} rowActions={actions}/>
+  return <div className="admin-page"><AdminHeading eyebrow={eyebrow} title={title} copy={copy} action={canWrite?<button className="admin-primary" onClick={()=>{setFormError('');onCreate?onCreate():setEditing({})}}><Plus size={16}/>{createLabel||`Crear ${formConfigs[resource].title}`}</button>:null}/><Feedback error={workspace.error} notice={workspace.notice} loading={workspace.loading}/><Toolbar placeholder={`Buscar ${title.toLowerCase()}...`} filters={filters}/><div className="admin-table-wrap"><table className="admin-table"><thead><tr>{columns.map(column=><th key={column.key}>{column.label}</th>)}<th></th></tr></thead><tbody>{records.map(record=><tr key={record.id}>{columns.map(column=><td key={column.key}>{column.render?column.render(record):record[column.key]||'—'}</td>)}<td><RowActions canWrite={canWrite} onEdit={()=>{setFormError('');setEditing(record)}} onDelete={()=>setDeleting(record)}/></td></tr>)}{!workspace.loading&&records.length===0&&<tr><td colSpan={columns.length+1}><GuideExample guideKey={`admin.${resource}`} canDismiss={canWrite}/></td></tr>}</tbody></table></div>{editing&&<CrudModal resource={resource} record={editing} data={{...data,setFormError}} onClose={()=>setEditing(null)} onSave={save} error={formError||workspace.error} saving={workspace.mutating}/>} {deleting&&<ConfirmDelete label={deleting.brand_name||deleting.name||deleting.invoice_number||deleting.request_type} onClose={()=>setDeleting(null)} onConfirm={remove}/>}</div>
 }
 
 function Dashboard({ workspace, setActive, profile }) {
@@ -431,13 +422,9 @@ const clientColumns=[
   {key:'package_usage',label:'Uso',render:item=><strong>{item.package_usage||0}</strong>},{key:'preview',label:'Portal',render:item=><button className="admin-secondary" onClick={()=>window.location.assign(`/admin/preview-client/${item.id}`)}><Eye size={14}/>Ver como cliente</button>},
 ]
 const packageColumns=[
-  {key:'name',label:'Paquete',render:item=><div><strong>{item.name}</strong><div className="muted-cell">{item.subtitle||'Sin subtítulo'}</div></div>},
-  {key:'price',label:'Precio',render:item=><strong>{formatMoney(item.price??item.monthly_price,item.currency||'DOP')}</strong>},
-  {key:'billing_period',label:'Periodo',render:item=>item.billing_period||'Mensual'},
-  {key:'services_included',label:'Servicios',render:item=>`${item.services_included?.length||item.included_services?.length||0} incluidos`},
-  {key:'display_order',label:'Orden',render:item=><strong>{item.display_order??0}</strong>},
-  {key:'is_featured',label:'Destacado',render:item=><Badge value={item.is_featured?'active':'paused'}/>},
-  {key:'is_active',label:'Estado',render:item=><Badge value={item.is_active?'active':'paused'}/>},
+  {key:'name',label:'Paquete',render:item=><strong>{item.name}</strong>},{key:'monthly_price',label:'Precio',render:item=>formatMoney(item.monthly_price)},
+  {key:'included_services',label:'Servicios',render:item=>`${item.included_services?.length||0} incluidos`},{key:'graphic_pieces',label:'Gráficas'},{key:'reels',label:'Reels'},
+  {key:'stories',label:'Historias'},{key:'is_active',label:'Estado',render:item=><Badge value={item.is_active?'active':'paused'}/>},
 ]
 const invoiceColumns=[
   {key:'invoice_number',label:'Factura',render:item=><strong>{item.invoice_number}</strong>},{key:'client',label:'Cliente',render:item=>item.clients?.brand_name||'—'},
@@ -530,38 +517,13 @@ function ConfidentialityAdminPage({ workspace }) {
   return <div className="admin-page"><AdminHeading eyebrow="ACCESO PRIVADO" title="Confidencialidad" copy="Gestiona versiones del compromiso y revisa qué clientes aceptaron." action={<button className="admin-primary" onClick={()=>setEditing({})}><Plus size={16}/>Crear versión</button>}/><Feedback error={error} notice={notice} loading={loading}/><div className="acceptance-counts"><span><strong>{data.agreements.length}</strong>versiones</span><span><strong>{acceptedClients.size}</strong>clientes aceptaron la activa</span><span><strong>{pending}</strong>pendientes</span></div><div className="admin-panel"><div className="admin-panel-head"><div><span className="admin-eyebrow">VERSIONES</span><h2>Compromisos registrados</h2></div></div><div className="confidentiality-admin-list">{data.agreements.map(item=><article className="confidentiality-admin-card" key={item.id}><div><Badge value={item.is_active?'active':'paused'}/><h3>{item.title} · {item.version}</h3><p>{item.content.slice(0,180)}{item.content.length>180?'…':''}</p></div><div className="confidentiality-admin-actions">{!item.is_active&&<button className="admin-primary" onClick={()=>run(()=>activateConfidentialityAgreement(item.id),'Nueva versión activa. Los clientes deberán aceptarla.')}>Activar</button>}<button className="admin-secondary" onClick={()=>setEditing(item)}><Edit size={14}/>Editar</button>{!item.is_active&&<button className="danger-button" onClick={()=>setDeleting(item)}>Eliminar</button>}</div></article>)}{!loading&&!data.agreements.length&&<GuideExample guideKey="admin.confidentiality" canDismiss={workspace.canWrite}/>}</div></div><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Cliente</th><th>Versión</th><th>Nombre aceptante</th><th>Fecha</th><th>IP</th></tr></thead><tbody>{data.acceptances.map(item=><tr key={item.id}><td><strong>{item.clients?.brand_name||'Cliente'}</strong></td><td>{item.agreement_version}</td><td>{item.accepted_name}</td><td>{formatDate(item.accepted_at)}</td><td>{item.ip_address||'No disponible'}</td></tr>)}{!loading&&!data.acceptances.length&&<tr><td colSpan="5"><div className="empty-table"><FileText size={22}/><strong>Aún no hay aceptaciones</strong></div></td></tr>}</tbody></table></div>{editing&&<CrudModal resource="confidentiality_agreements" record={editing} data={{...workspace.data,setFormError:setError}} onClose={()=>setEditing(null)} onSave={save} error={error} saving={false}/>} {deleting&&<ConfirmDelete label={`${deleting.title} ${deleting.version}`} onClose={()=>setDeleting(null)} onConfirm={remove}/>}</div>
 }
 
-function PortalSettingsPage(){
-  const [draft,setDraft]=useState({...getPortalSettings()}),[saving,setSaving]=useState(false),[uploading,setUploading]=useState(''),[error,setError]=useState(''),[notice,setNotice]=useState('')
-  const update=(key,value)=>setDraft(current=>({...current,[key]:value}))
-  const save=async label=>{setSaving(true);setError('');setNotice('');try{const saved=await savePortalSettings(draft);setDraft({...saved});setNotice(`${label} guardado correctamente.`)}catch(reason){setError(reason.message||'No se pudo guardar la configuración.')}finally{setSaving(false)}}
-  const restoreTheme=()=>{const next={...draft,...Object.fromEntries(['primary_color','soft_color','accent_color','background_color','text_color','muted_text_color','border_color','card_color','border_radius','card_style','theme_mode'].map(key=>[key,defaultPortalSettings[key]]))};setDraft(next);setNotice('Tema predeterminado restaurado en la vista previa. Guarda el tema para hacerlo permanente.')}
-  const upload=async(event,key)=>{const file=event.target.files?.[0];if(!file)return;setUploading(key);setError('');try{const url=await uploadPortalAsset(file,key);update(key,url);setNotice('Archivo cargado. Guarda la marca para confirmar el cambio.')}catch(reason){setError(reason.message)}finally{setUploading('')}}
-  const textField=(key,label,type='text',placeholder='')=><label><span>{label}</span><input type={type} value={draft[key]||''} placeholder={placeholder} onChange={event=>update(key,event.target.value)}/></label>
-  const assetField=(key,label,help,accept='image/*')=><label className="portal-asset-field"><span>{label}</span><div>{draft[key]?<img src={draft[key]} alt={label}/>:<div className="asset-placeholder"><Image size={20}/>Sin archivo</div>}<input type="file" accept={accept} onChange={event=>upload(event,key)}/></div><small>{uploading===key?'Subiendo...':help}</small></label>
-  const colorField=(key,label)=><label className="portal-color-field"><span>{label}</span><div><input type="color" value={draft[key]} onChange={event=>update(key,event.target.value)}/><input value={draft[key]} pattern="#[0-9A-Fa-f]{6}" onChange={event=>update(key,event.target.value)}/></div></label>
-  return <div className="admin-page portal-settings-page">
-    <AdminHeading eyebrow="PERSONALIZACIÓN GLOBAL" title="Configuración" copy="Administra la identidad de la agencia y el tema visual aplicado a todos los espacios del portal."/>
-    <Feedback error={error} notice={notice} loading={saving}/>
-    <section className="settings-section"><div className="settings-section-head"><div><span className="admin-eyebrow">MARCA DEL PORTAL</span><h2>Identidad de la agencia</h2><p>Estos datos se reutilizan en acceso, administración, clientes, colaboradores, confidencialidad y correos.</p></div><button className="admin-primary" type="button" disabled={saving||uploading} onClick={()=>save('Marca del portal')}><Check size={15}/>Guardar marca</button></div>
-      <div className="portal-assets-grid">{assetField('main_logo_url','Logo principal','PNG, JPG, WebP o SVG. Máximo 5 MB.')}{assetField('icon_logo_url','Logo reducido / icono','Usado en espacios compactos.')}{assetField('favicon_url','Favicon','ICO, PNG o SVG. Se aplica a la pestaña del navegador.','image/*,.ico')}</div>
-      <div className="settings-form-grid">{textField('agency_name','Nombre de la agencia')}{textField('portal_name','Nombre del portal')}{textField('commercial_name','Firma o nombre comercial')}{textField('support_email','Correo de contacto','email','hola@agencia.com')}{textField('support_whatsapp','WhatsApp de contacto','tel','+1 000 000 0000')}{textField('website_url','Sitio web','url','https://')}{textField('instagram_url','Instagram','url','https://instagram.com/')}{textField('facebook_url','Facebook','url','https://facebook.com/')}{textField('tiktok_url','TikTok','url','https://tiktok.com/@')}</div>
-      <label className="settings-wide-field"><span>Texto de bienvenida</span><textarea value={draft.welcome_message||''} onChange={event=>update('welcome_message',event.target.value)} rows="3"/></label>
-    </section>
-    <section className="settings-section"><div className="settings-section-head"><div><span className="admin-eyebrow">TEMA VISUAL</span><h2>Colores y apariencia</h2><p>Los cambios se reflejan en la vista previa antes de guardarlos y se aplican mediante variables CSS globales.</p></div><div className="settings-actions"><button className="admin-secondary" type="button" onClick={restoreTheme}>Restaurar tema predeterminado</button><button className="admin-primary" type="button" disabled={saving} onClick={()=>save('Tema visual')}><Check size={15}/>Guardar tema</button></div></div>
-      <div className="theme-editor-grid"><div className="theme-controls"><div className="color-settings-grid">{colorField('primary_color','Color primario')}{colorField('soft_color','Color secundario suave')}{colorField('accent_color','Color de acento')}{colorField('background_color','Fondo')}{colorField('text_color','Texto principal')}{colorField('muted_text_color','Texto secundario')}{colorField('border_color','Bordes')}{colorField('card_color','Tarjetas')}</div><div className="appearance-settings"><label><span>Radio de bordes</span><div className="range-setting"><input type="range" min="0" max="32" value={draft.border_radius} onChange={event=>update('border_radius',Number(event.target.value))}/><strong>{draft.border_radius}px</strong></div></label><label><span>Estilo de tarjetas</span><select value={draft.card_style} onChange={event=>update('card_style',event.target.value)}><option value="outlined">Con borde</option><option value="elevated">Con sombra</option><option value="flat">Plano</option></select></label><label><span>Modo visual</span><select value={draft.theme_mode} onChange={event=>update('theme_mode',event.target.value)}><option value="light">Claro</option><option value="dark">Oscuro</option></select></label></div></div>
-        <div className={`theme-preview preview-${draft.card_style} preview-${draft.theme_mode}`} style={{'--portal-primary':draft.primary_color,'--portal-soft':draft.soft_color,'--portal-accent':draft.accent_color,'--portal-background':draft.background_color,'--portal-text':draft.text_color,'--portal-muted':draft.muted_text_color,'--portal-border':draft.border_color,'--portal-card':draft.card_color,'--portal-radius':`${draft.border_radius}px`}}><span className="admin-eyebrow">VISTA PREVIA</span><div className="theme-preview-window"><header><PortalBrand/><button>Acción</button></header><div><small>PORTAL PERSONALIZADO</small><h3>{draft.welcome_message||'Bienvenido a tu portal'}</h3><p>Así se verán el fondo, los textos, bordes, tarjetas y acciones principales.</p><article><span>Entregables disponibles</span><strong>12</strong><button>Ver detalles</button></article></div></div><dl><div><dt>Variable</dt><dd>Valor activo</dd></div>{[['--portal-primary',draft.primary_color],['--portal-soft',draft.soft_color],['--portal-accent',draft.accent_color],['--portal-background',draft.background_color]].map(([name,value])=><div key={name}><dt>{name}</dt><dd><i style={{background:value}}/>{value}</dd></div>)}</dl></div></div>
-    </section>
-  </div>
-}
-
 function UnavailablePage({ title, canDismiss=false }) {
   const guideKey=title==='Reportes'?'admin.reports':'admin.settings'
   return <div className="admin-page"><AdminHeading eyebrow="GUÍA DEL MÓDULO" title={title} copy="Esta referencia visual muestra cómo se organizará la información cuando el módulo tenga datos reales."/><GuideExample guideKey={guideKey} canDismiss={canDismiss}/></div>
 }
 
 export default function AdminApp({ profile, onSignOut }) {
-  const route=window.location.pathname.split('/').filter(Boolean)[1]
-  const [active,setActive]=useState(adminNav.some(item=>item.id===route)?route:'dashboard')
+  const [active,setActive]=useState('dashboard')
   const [menuOpen,setMenuOpen]=useState(false)
   const workspace=useWorkspace()
   workspace.canWrite=profile.role==='admin'
@@ -571,13 +533,13 @@ export default function AdminApp({ profile, onSignOut }) {
   const pages={
     dashboard:<Dashboard {...pageProps} setActive={setActive} profile={profile}/>,
     clients:<ClientsPage {...pageProps}/>,
-    packages:<PackagesPage {...pageProps}/>,
+    packages:<EntityTablePage {...pageProps} resource="packages" title="Paquetes" eyebrow="OFERTA REAL" copy="Gestiona los planes contratables de la agencia." columns={packageColumns}/>,
     deliverables:<EntityTablePage {...pageProps} resource="deliverables" title="Entregables" eyebrow="PRODUCCIÓN REAL" copy="Administra piezas, responsables, archivos y estados." columns={deliverableColumns} filters={['Cliente','Estado','Responsable']}/>, drive_assets:<EntityTablePage {...pageProps} resource="deliverable_drive_assets" title="Archivos Google Drive" eyebrow="BIBLIOTECA VINCULADA" copy="Vincula archivos y carpetas de Drive a entregables y controla su visibilidad para el cliente." columns={driveAssetColumns} filters={['Cliente','Entregable','Visibilidad']}/>,
     calendar:<CalendarPage {...pageProps}/>,
     billing:<EntityTablePage {...pageProps} resource="invoices" title="Facturación" eyebrow="CONTROL FINANCIERO" copy="Gestiona facturas persistentes y su estado de pago." columns={invoiceColumns} filters={['Estado','Cliente']}/>,
     requests:<EntityTablePage {...pageProps} resource="requests" title="Solicitudes" eyebrow="PETICIONES DEL PORTAL" copy="Revisa y administra solicitudes reales de clientes." columns={requestColumns} filters={['Estado','Prioridad']}/>,
     services:<EntityTablePage {...pageProps} resource="extra_services" title="Servicios adicionales" eyebrow="CATÁLOGO REAL" copy="Configura los servicios visibles en el portal cliente." columns={serviceColumns}/>,
-    reports:<UnavailablePage title="Reportes" canDismiss={workspace.canWrite}/>, team:<TeamPage {...pageProps}/>, assignments:<EntityTablePage {...pageProps} resource="client_team_assignments" title="Asignaciones" eyebrow="EQUIPO POR CLIENTE" copy="Asigna uno o varios colaboradores con un rol específico." columns={assignmentColumns}/>, tasks:<EntityTablePage {...pageProps} resource="internal_tasks" title="Tareas internas" eyebrow="OPERACIÓN" copy="Asigna y controla trabajo interno sin exponerlo al cliente." columns={taskColumns}/>, notes:<EntityTablePage {...pageProps} resource="internal_notes" title="Notas internas" eyebrow="CONTEXTO PRIVADO" copy="Notas con visibilidad por rol y equipo asignado." columns={noteColumns}/>, brand_profiles:<EntityTablePage {...pageProps} resource="client_brand_profiles" title="Perfiles de marca" eyebrow="IDENTIDAD DEL CLIENTE" copy="Administra logo, información estratégica y la ficha Sobre la marca." columns={brandProfileColumns}/>, meetings:<EntityTablePage {...pageProps} resource="calendar_events" title="Reuniones" eyebrow="CALENDARIO INTERNO" copy="Crea reuniones manuales y comparte enlaces de Google Meet con el cliente." columns={meetingColumns}/>, notifications:<NotificationHistory workspace={workspace}/>, resources:<EntityTablePage {...pageProps} resource="client_resources" title="Estrategia y materiales" eyebrow="VISIBILIDAD CONTROLADA" copy="Diagnósticos, rutas, recomendaciones y materiales con permisos por rol." columns={resourceColumns}/>, confidentiality:<ConfidentialityAdminPage {...pageProps}/>, settings:<PortalSettingsPage/>,
+    reports:<UnavailablePage title="Reportes" canDismiss={workspace.canWrite}/>, team:<TeamPage {...pageProps}/>, assignments:<EntityTablePage {...pageProps} resource="client_team_assignments" title="Asignaciones" eyebrow="EQUIPO POR CLIENTE" copy="Asigna uno o varios colaboradores con un rol específico." columns={assignmentColumns}/>, tasks:<EntityTablePage {...pageProps} resource="internal_tasks" title="Tareas internas" eyebrow="OPERACIÓN" copy="Asigna y controla trabajo interno sin exponerlo al cliente." columns={taskColumns}/>, notes:<EntityTablePage {...pageProps} resource="internal_notes" title="Notas internas" eyebrow="CONTEXTO PRIVADO" copy="Notas con visibilidad por rol y equipo asignado." columns={noteColumns}/>, brand_profiles:<EntityTablePage {...pageProps} resource="client_brand_profiles" title="Perfiles de marca" eyebrow="IDENTIDAD DEL CLIENTE" copy="Administra logo, información estratégica y la ficha Sobre la marca." columns={brandProfileColumns}/>, meetings:<EntityTablePage {...pageProps} resource="calendar_events" title="Reuniones" eyebrow="CALENDARIO INTERNO" copy="Crea reuniones manuales y comparte enlaces de Google Meet con el cliente." columns={meetingColumns}/>, notifications:<NotificationHistory workspace={workspace}/>, resources:<EntityTablePage {...pageProps} resource="client_resources" title="Estrategia y materiales" eyebrow="VISIBILIDAD CONTROLADA" copy="Diagnósticos, rutas, recomendaciones y materiales con permisos por rol." columns={resourceColumns}/>, confidentiality:<ConfidentialityAdminPage {...pageProps}/>, settings:<UnavailablePage title="Configuración" canDismiss={workspace.canWrite}/>,
   }
   return <div className={`admin-shell ${workspace.canWrite?'':'read-only'}`}><AdminSidebar active={active} setActive={setActive} open={menuOpen} setOpen={setMenuOpen} profile={profile} onLogout={onSignOut}/>{menuOpen&&<div className="admin-overlay" onClick={()=>setMenuOpen(false)}/>}<main className="admin-main"><AdminTopbar active={active} setMenuOpen={setMenuOpen} profile={profile} onRefresh={workspace.refresh}/>{!workspace.canWrite&&<div className="read-only-banner"><Eye size={14}/>Modo de solo lectura: los cambios están deshabilitados</div>}{pages[active]}</main></div>
 }

@@ -28,12 +28,13 @@ const requiredFiles = [
   'src/mini-react.js',
   'src/styles.css',
   'src/admin-styles.css',
+  'src/biem-theme.css',
 ]
 
 await Promise.all(requiredFiles.map(file => access(path.join(root, file))))
 
 const index = await readFile(path.join(root, 'index.html'), 'utf8')
-if (!index.includes('/src/main.js') || !index.includes('/src/styles.css') || !index.includes('/src/admin-styles.css') || !index.includes('/config.js')) {
+if (!index.includes('/src/main.js') || !index.includes('/src/styles.css') || !index.includes('/src/admin-styles.css') || !index.includes('/config.js') || !index.includes('/src/biem-theme.css')) {
   throw new Error('index.html must reference the compiled JavaScript and stylesheet')
 }
 

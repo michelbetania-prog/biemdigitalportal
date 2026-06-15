@@ -426,3 +426,21 @@ La ruta `/team/brands` muestra únicamente las marcas vinculadas al usuario medi
 - entregables, materiales y contexto operativo de la marca.
 
 El RPC no devuelve paquetes, facturación, pagos ni notas `admin_only`. La política de calendario exige una asignación activa mediante `is_assigned_to_client(client_id)`.
+
+## 19. Identidad visual BIEM Digital
+
+La identidad visual se centraliza en `src/biem-theme.css`, cargado después de los estilos base para no modificar lógica, rutas ni componentes.
+
+Tokens principales:
+
+- `--color-primary: #4B0082`
+- `--color-primary-hover: #3A0066`
+- `--color-soft: #E6E6FA`
+- `--color-soft-light: #F6F3FB`
+- `--color-accent: #C46A2D`
+- `--color-accent-hover: #A95724`
+- `--color-text: #1F1A24`
+- `--color-muted: #6B6472`
+- `--color-border: #D8D2E6`
+
+El tema cubre autenticación, confidencialidad, onboarding, portal cliente, vista previa administrativa, panel admin, colaboradores, Kanban, Mis marcas, archivos de Google Drive, estados vacíos y ejemplos guía. Los fondos generales permanecen claros, las tarjetas son blancas y el morado se reserva para navegación y acciones principales.
