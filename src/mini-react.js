@@ -107,7 +107,26 @@ function renderRoot() {
   currentInstance = 'root'
   hookIndex = 0
   pendingEffects = []
-  const next = build(rootVNode)
+  let next
+  try {
+    next = build(rootVNode)
+  } catch (error) {
+    console.error('[BIEM render error]', error)
+    const fallback = document.createElement('main')
+    fallback.setAttribute('class', 'runtime-error-boundary')
+    const title = document.createElement('h1')
+    title.textContent = 'No pudimos mostrar esta pantalla'
+    const message = document.createElement('p')
+    message.textContent = 'Ocurrió un error inesperado al cargar el portal. Recarga la página o contacta al administrador.'
+    const details = document.createElement('pre')
+    details.textContent = error instanceof Error ? error.message : String(error)
+    const reload = document.createElement('button')
+    reload.textContent = 'Recargar'
+    reload.addEventListener('click', () => window.location.reload())
+    fallback.append(title, message, details, reload)
+    rootNode.replaceChildren(fallback)
+    return
+  }
   rootNode.replaceChildren(next)
   const effects = pendingEffects
   pendingEffects = []
