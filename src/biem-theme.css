@@ -1,0 +1,114 @@
+/* BIEM Digital visual identity — purple, lavender and copper. */
+:root{
+  --color-primary:#4B0082;
+  --color-primary-hover:#3A0066;
+  --color-soft:#E6E6FA;
+  --color-soft-light:#F6F3FB;
+  --color-accent:#C46A2D;
+  --color-accent-hover:#A95724;
+  --color-text:#1F1A24;
+  --color-muted:#6B6472;
+  --color-border:#D8D2E6;
+  --color-card:#FFFFFF;
+  --color-success:#2E7D5B;
+  --color-warning:#C46A2D;
+  --color-error:#B42318;
+  --primary:var(--color-primary);
+  --primary-hover:var(--color-primary-hover);
+  --soft:var(--color-soft);
+  --soft-light:var(--color-soft-light);
+  --accent:var(--color-accent);
+  --ink:var(--color-text);
+  --muted:var(--color-muted);
+  --line:var(--color-border);
+  --cream:var(--color-soft-light);
+  --coral:var(--color-accent);
+  --coral-dark:var(--color-accent-hover);
+  --green:var(--color-primary);
+  --lime:var(--color-accent);
+  --client-bg:var(--color-soft-light);
+  --client-card:var(--color-card);
+  --client-text:var(--color-text);
+  --client-muted:var(--color-muted);
+  --client-green:var(--color-primary);
+  --client-border:var(--color-border);
+}
+html,body{background:var(--color-soft-light);color:var(--color-text)}
+body{accent-color:var(--color-primary)}
+::selection{background:var(--color-soft);color:var(--color-primary-hover)}
+a{color:var(--color-primary)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid color-mix(in srgb,var(--color-primary) 24%,transparent);outline-offset:2px}
+input,select,textarea{color:var(--color-text)}
+
+/* Shared buttons, links and feedback */
+.primary-button,.admin-primary,.client-primary-button,.login-submit,.first-access-submit,.kanban-create,.brand-primary-action,.brand-workspace-actions button,.brand-workspace aside section>button{background:var(--color-primary)!important;border-color:var(--color-primary)!important;color:#fff!important;box-shadow:0 7px 18px rgba(75,0,130,.16)}
+.primary-button:hover,.admin-primary:hover,.client-primary-button:hover,.login-submit:hover,.first-access-submit:hover,.kanban-create:hover,.brand-primary-action:hover,.brand-workspace-actions button:hover,.brand-workspace aside section>button:hover{background:var(--color-primary-hover)!important;border-color:var(--color-primary-hover)!important;transform:translateY(-1px)}
+.secondary-button,.admin-secondary,.client-secondary-button,.brand-secondary-action,.brand-workspace-actions a,.kanban-refresh,.auth-link{background:var(--color-soft)!important;border:1px solid var(--color-border)!important;color:var(--color-primary)!important}
+.secondary-button:hover,.admin-secondary:hover,.client-secondary-button:hover,.brand-secondary-action:hover,.brand-workspace-actions a:hover,.kanban-refresh:hover{background:#DDD8F1!important;border-color:#C7BEDD!important}
+.danger-button{background:#FDECEC!important;border-color:#F5C8C5!important;color:var(--color-error)!important}
+.data-feedback.success{background:#EAF6F0!important;border-color:#B9DEC9!important;color:var(--color-success)!important}.data-feedback.error,.auth-error,.modal-error{background:#FDECEC!important;border-color:#F5C8C5!important;color:var(--color-error)!important}.data-feedback.loading{background:var(--color-soft)!important;border-color:var(--color-border)!important;color:var(--color-primary)!important}
+
+/* Legacy client shell */
+.sidebar{background:var(--color-primary)}
+.logo-dot,.logo-mark i,.sidebar nav button.active svg,.wave{color:var(--color-accent);background-color:var(--color-accent)}
+.client-switcher,.sidebar-insight{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18)}
+.sidebar nav button{color:#DED4E8}.sidebar nav button:hover{background:rgba(255,255,255,.1);color:#fff}.sidebar nav button.active{background:var(--color-soft);color:var(--color-primary)}
+.sidebar nav button b,.unread-dot,.notification i{background:var(--color-accent)}
+.topbar{background:rgba(246,243,251,.94);border-color:var(--color-border)}
+.icon-button{border-color:var(--color-border);color:var(--color-primary)}
+.hero-report{background:var(--color-primary)}
+
+/* Authentication, access and first-login screens */
+.admin-login-shell,.auth-state-screen,.first-access-shell{background:var(--color-soft-light)!important;color:var(--color-text)}
+.admin-login-brand{background:var(--color-primary)!important;color:#fff}
+.admin-login-brand::after{background:radial-gradient(circle at 76% 20%,rgba(196,106,45,.34),transparent 31%),radial-gradient(circle at 22% 78%,rgba(230,230,250,.18),transparent 34%)!important}
+.admin-login-panel,.login-card,.auth-state-card,.first-access-card{background:var(--color-card)!important;border-color:var(--color-border)!important;box-shadow:0 22px 65px rgba(75,0,130,.12)!important}
+.admin-logo b,.admin-login-brand b,.first-access-shell>header strong,.kanban-team-logo{color:var(--color-accent)!important}
+.login-lock,.first-access-lock,.success-mark{background:var(--color-soft)!important;color:var(--color-primary)!important}
+.login-card input,.password-input,.first-access-card input,.brand-edit-form input,.brand-edit-form textarea{border-color:var(--color-border)!important;background:#fff!important}.login-card input:focus,.password-input:focus,.brand-edit-form input:focus,.brand-edit-form textarea:focus{border-color:var(--color-primary)!important;box-shadow:0 0 0 3px rgba(75,0,130,.1)}
+.first-access-shell>header{background:var(--color-primary)!important;color:#fff!important;border-color:var(--color-primary-hover)!important}
+.confidentiality-copy{background:var(--color-soft-light)!important;border-color:var(--color-border)!important}.confidentiality-copy>div:first-child,.acceptance-check.checked{color:var(--color-primary)!important}.acceptance-check{border-color:var(--color-border)!important;background:#fff!important}.acceptance-check.checked{background:var(--color-soft-light)!important;border-color:var(--color-primary)!important}.check-box{border-color:var(--color-primary)!important}.acceptance-check.checked .check-box{background:var(--color-primary)!important;color:#fff!important}
+
+/* Client portal and admin preview */
+.client-portal-shell{background:var(--color-soft-light)!important;color:var(--color-text)}
+.client-portal-shell>aside{background:var(--color-primary)!important;color:#fff!important;border-color:var(--color-primary-hover)!important}
+.client-portal-shell>aside nav button{color:#E4DCEC!important}.client-portal-shell>aside nav button:hover{background:rgba(255,255,255,.1)!important;color:#fff!important}.client-portal-shell>aside nav button.active{background:var(--color-soft)!important;color:var(--color-primary)!important}.client-portal-shell>aside nav button.active svg{color:var(--color-accent)!important}
+.portal-brand-switch,.portal-signout{border-color:rgba(255,255,255,.18)!important}.portal-brand-switch{background:rgba(255,255,255,.08)!important}.portal-signout{color:#E4DCEC!important}
+.portal-topbar{background:rgba(255,255,255,.94)!important;border-color:var(--color-border)!important;color:var(--color-text)!important}
+.client-admin-preview-bar{background:var(--color-primary)!important;color:#fff!important;border-color:var(--color-primary-hover)!important}.client-admin-preview-bar button{background:#fff!important;color:var(--color-primary)!important;border-color:#fff!important}
+.client-welcome-card{background:linear-gradient(135deg,#fff 0%,var(--color-soft) 100%)!important;border-color:var(--color-border)!important;box-shadow:0 14px 38px rgba(75,0,130,.1)!important}.client-welcome-card::after{background:var(--color-accent)!important}
+.client-eyebrow,.client-summary-action,.client-link-button,.brand-preview-name{color:var(--color-primary)!important}.client-welcome-copy h1,.client-section-heading h2,.client-page-heading h1,.brand-about-card h2{color:var(--color-text)!important}
+.client-status-badge.active,.client-item-status.active,.client-item-status.approved,.client-item-status.published{background:#E7F4ED!important;color:var(--color-success)!important}.client-status-badge.neutral,.client-item-status.pending,.client-item-status.new,.client-item-status.client_review,.client-item-status.in_review{background:var(--color-soft)!important;color:var(--color-primary)!important}.client-item-status.overdue,.client-item-status.changes_requested,.client-item-status.reschedule_requested{background:#F7E4D8!important;color:var(--color-accent-hover)!important}
+.client-summary-card,.client-section-card,.brand-preview-card,.brand-about-card,.brand-detail-grid article,.strategy-card,.client-deliverable-list>article,.client-event-list>article,.client-card-list>article{background:#fff!important;border-color:var(--color-border)!important;box-shadow:0 8px 26px rgba(75,0,130,.06)!important}
+.client-summary-card:hover{border-color:#BFB2D5!important;box-shadow:0 14px 34px rgba(75,0,130,.11)!important}.client-summary-icon,.compact-list-icon,.client-empty-state>div{background:var(--color-soft)!important;color:var(--color-primary)!important}.client-summary-value{color:var(--color-primary)!important}
+.client-alert-card.warning{background:#FFF8F2!important;border-color:#E8C3A9!important}.client-alert-card.info{background:var(--color-soft-light)!important;border-color:var(--color-border)!important}.client-alert-icon{background:#F4E1D3!important;color:var(--color-accent)!important}
+.brand-cover{background-color:var(--color-soft)!important;border-color:var(--color-border)!important}.brand-cover>button,.brand-links a,.portal-drive-assets a{background:var(--color-soft)!important;border-color:var(--color-border)!important;color:var(--color-primary)!important}.portal-drive-assets a:hover,.brand-links a:hover{border-color:var(--color-primary)!important}
+.notification-form label{background:var(--color-soft-light)!important;border-color:var(--color-border)!important}.portal-response,.deliverable-comment{background:var(--color-soft-light)!important;color:var(--color-primary-hover)!important}
+
+/* Admin workspace */
+.admin-shell,.admin-main{background:var(--color-soft-light)!important;color:var(--color-text)!important}
+.admin-sidebar{background:var(--color-primary)!important;color:#fff!important;border-color:var(--color-primary-hover)!important}.admin-sidebar nav>span,.admin-sidebar small,.admin-sidebar-user span{color:#CFC3DA!important}.admin-sidebar nav button{color:#E1D8E9!important}.admin-sidebar nav button:hover{background:rgba(255,255,255,.1)!important;color:#fff!important}.admin-sidebar nav button.active{background:var(--color-soft)!important;color:var(--color-primary)!important}.admin-sidebar nav button.active svg{color:var(--color-accent)!important}.admin-workspace,.admin-sidebar-user{border-color:rgba(255,255,255,.18)!important}.admin-workspace{background:rgba(255,255,255,.08)!important}.admin-workspace-icon,.team-avatar{background:var(--color-soft)!important;color:var(--color-primary)!important}
+.admin-topbar{background:rgba(255,255,255,.94)!important;border-color:var(--color-border)!important}.global-search,.admin-search,.role-switch,.admin-icon-button{background:#fff!important;border-color:var(--color-border)!important;color:var(--color-primary)!important}
+.admin-heading h1,.admin-panel-head h2,.admin-kpi-grid strong{color:var(--color-text)!important}.admin-eyebrow{color:var(--color-primary)!important}
+.admin-kpi-grid article,.admin-panel,.admin-table-wrap,.team-admin-grid article,.confidentiality-admin-card,.crud-modal,.delete-confirm,.admin-empty{background:#fff!important;border-color:var(--color-border)!important;box-shadow:0 8px 28px rgba(75,0,130,.06)!important}
+.admin-kpi-icon.green,.admin-kpi-icon.lilac,.admin-kpi-icon.blue{background:var(--color-soft)!important;color:var(--color-primary)!important}.admin-kpi-icon.amber,.admin-kpi-icon.coral,.activity-icon,.attention-date{background:#F4E1D3!important;color:var(--color-accent)!important}
+.admin-table th{background:var(--color-soft-light)!important;color:var(--color-muted)!important;border-color:var(--color-border)!important}.admin-table td{border-color:#E9E4F0!important}.admin-table tr:hover td{background:#FCFAFF!important}
+.admin-toolbar{background:#fff!important;border-color:var(--color-border)!important}.table-actions button,.admin-icon-button{color:var(--color-primary)!important}.read-only-banner{background:var(--color-soft)!important;border-color:var(--color-border)!important;color:var(--color-primary)!important}
+.modal-backdrop,.task-detail-backdrop{background:rgba(31,26,36,.55)!important}
+.crud-form-grid input,.crud-form-grid select,.crud-form-grid textarea,.kanban-create-modal input,.kanban-create-modal select,.kanban-create-modal textarea{border-color:var(--color-border)!important}.crud-form-grid input:focus,.crud-form-grid select:focus,.crud-form-grid textarea:focus{border-color:var(--color-primary)!important}
+
+/* Team workspace, Kanban and assigned brands */
+.kanban-team-shell,.kanban-workspace,.task-detail-panel{background:var(--color-soft-light)!important;color:var(--color-text)!important}.kanban-team-shell>aside{background:var(--color-primary)!important;color:#fff!important}.kanban-team-shell>aside nav button{color:#DED4E8!important}.kanban-team-shell>aside nav button:hover{background:rgba(255,255,255,.1)!important;color:#fff!important}.kanban-team-shell>aside nav button.active{background:var(--color-soft)!important;color:var(--color-primary)!important}.kanban-user{background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.18)!important}.kanban-user>div,.task-avatar{background:var(--color-soft)!important;color:var(--color-primary)!important}.kanban-signout{color:#DED4E8!important;border-color:rgba(255,255,255,.18)!important}
+.kanban-topbar{background:rgba(255,255,255,.95)!important;border-color:var(--color-border)!important}.kanban-search,.kanban-filters select,.kanban-filters label{background:#fff!important;border-color:var(--color-border)!important;color:var(--color-text)!important}.kanban-heading>div>span{color:var(--color-primary)!important}
+.kanban-column{background:var(--color-soft)!important;border-color:var(--color-border)!important}.kanban-column.status-in_progress{background:#F0EAF7!important}.kanban-column.status-in_review{background:#FBF2EC!important}.kanban-column.status-completed{background:#EDF6F1!important}.kanban-column>header i{background:var(--color-primary)!important}.kanban-column.status-in_review>header i{background:var(--color-accent)!important}.kanban-column.status-completed>header i{background:var(--color-success)!important}
+.kanban-card,.kanban-list-table,.team-overview-panel,.team-overview-kpis article,.task-calendar-list>button,.team-documents>section,.task-detail-grid section,.task-detail-grid>aside,.kanban-create-modal{background:#fff!important;border-color:var(--color-border)!important;box-shadow:0 7px 22px rgba(75,0,130,.06)!important}.kanban-card:hover{border-color:#BDAFD3!important;box-shadow:0 12px 28px rgba(75,0,130,.12)!important}.task-type,.task-status.todo,.task-status.in_progress,.task-status.in_review{background:var(--color-soft)!important;color:var(--color-primary)!important}
+.task-priority.low{background:var(--color-soft)!important;color:var(--color-primary)!important}.task-priority.medium{background:#F4E1D3!important;color:var(--color-accent-hover)!important}.task-priority.high{background:#F4E1D3!important;border:1px solid var(--color-accent)!important;color:#7A3515!important}.task-priority.urgent{background:#FDE3E1!important;color:var(--color-error)!important}.overdue{color:var(--color-error)!important}
+.task-comment-form button,.task-inline-form button{background:var(--color-primary)!important;color:#fff!important}.task-attachments a,.team-drive-links>article>button{background:var(--color-soft)!important;color:var(--color-primary)!important}.task-comments article>div{background:var(--color-soft)!important;color:var(--color-primary)!important}
+.brand-library-toolbar,.brand-library-card,.brand-workspace-hero,.brand-info-panel,.brand-workspace-grid>aside>section{background:#fff!important;border-color:var(--color-border)!important;box-shadow:0 8px 26px rgba(75,0,130,.06)!important}.brand-library-card:hover{border-color:#BDAFD3!important;box-shadow:0 14px 32px rgba(75,0,130,.12)!important}.brand-library-logo,.brand-workspace-logo,.brand-role-badge,.brand-workspace-title b,.brand-view-switch{background:var(--color-soft)!important;color:var(--color-primary)!important}.brand-view-switch button.active{color:var(--color-primary)!important}.brand-task-counts span,.brand-contact-grid article,.brand-context-grid article{background:var(--color-soft-light)!important}.brand-task-counts .danger{background:#FDECEC!important;color:var(--color-error)!important}.brand-link-library a{background:var(--color-soft-light)!important;border-color:var(--color-border)!important;color:var(--color-primary)!important}.brand-back,.brand-info-panel>header span,.brand-workspace-title>span,.brand-workspace aside section>span{color:var(--color-primary)!important}
+
+/* Guide examples and Drive assets */
+.guide-example-card{background:var(--color-soft-light)!important;border-color:var(--color-border)!important;color:var(--color-text)!important}.guide-example-icon{background:var(--color-soft)!important;color:var(--color-primary)!important}.guide-example-label{display:inline-flex;width:max-content;padding:5px 8px;border-radius:999px;background:var(--color-soft)!important;color:var(--color-primary)!important}.guide-example-card h3{color:var(--color-accent)!important}.guide-example-meta span{background:#fff!important;border-color:var(--color-border)!important;color:var(--color-muted)!important}.guide-example-dismiss{background:var(--color-soft)!important;color:var(--color-primary)!important}.guide-example-dismiss:hover{background:#DDD8F1!important}
+.portal-drive-assets a,.team-drive-links a,.task-attachments a{border-color:var(--color-border)!important}.portal-drive-assets a svg,.team-drive-links svg,.task-attachments a svg{color:var(--color-primary)!important}
+
+/* Status helpers */
+.badge.active,.client-state.active{background:var(--color-soft)!important;color:var(--color-primary)!important}.badge.pending,.badge.medium,.client-state.paused{background:#F4E1D3!important;color:var(--color-accent-hover)!important}.badge.paid,.badge.approved,.badge.published,.task-status.completed{background:#E7F4ED!important;color:var(--color-success)!important}.badge.overdue,.badge.urgent,.client-state.expired{background:#FDECEC!important;color:var(--color-error)!important}
