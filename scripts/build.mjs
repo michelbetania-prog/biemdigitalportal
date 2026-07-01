@@ -9,6 +9,7 @@ const output = path.join(root, 'dist')
 await rm(output, { recursive: true, force: true })
 await mkdir(path.join(output, 'src', 'data'), { recursive: true })
 await mkdir(path.join(output, 'src', 'lib'), { recursive: true })
+await mkdir(path.join(output, 'vendor', 'supabase-js'), { recursive: true })
 await cp(path.join(root, 'index.html'), path.join(output, 'index.html'))
 const browserConfig = {
   supabaseUrl: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
@@ -18,6 +19,10 @@ await writeFile(path.join(output, 'config.js'), `globalThis.__BIEM_CONFIG__ = ${
 await cp(path.join(root, 'src', 'styles.css'), path.join(output, 'src', 'styles.css'))
 await cp(path.join(root, 'src', 'admin-styles.css'), path.join(output, 'src', 'admin-styles.css'))
 await cp(path.join(root, 'src', 'biem-theme.css'), path.join(output, 'src', 'biem-theme.css'))
+await cp(
+  path.join(root, 'node_modules', '@supabase', 'supabase-js', 'index.js'),
+  path.join(output, 'vendor', 'supabase-js', 'index.js'),
+)
 
 for (const asset of ['App.js', 'AdminApp.js', 'AuthApp.js', 'FirstLoginConfidentialityScreen.js', 'ClientSetupScreen.js', 'TeamApp.js', 'ClientPortalApp.js', 'GuideExample.js', 'AdminClientPreview.js', 'icons.js', 'main.js', 'mini-react.js', 'data/account-data.js', 'lib/auth.js', 'lib/supabase.js', 'lib/admin-api.js', 'lib/confidentiality.js', 'lib/team-api.js', 'lib/client-api.js', 'lib/portal-api.js', 'lib/portal-settings.js']) {
   const source = await readFile(path.join(compiled, asset), 'utf8')
@@ -32,6 +37,7 @@ for (const asset of ['App.js', 'AdminApp.js', 'AuthApp.js', 'FirstLoginConfident
     .replaceAll("'./ClientPortalApp.jsx'", "'./ClientPortalApp.js'")
     .replaceAll("'./GuideExample.jsx'", "'./GuideExample.js'")
     .replaceAll("'./AdminClientPreview.jsx'", "'./AdminClientPreview.js'")
+    .replaceAll("'@supabase/supabase-js'", "'/vendor/supabase-js/index.js'")
 
   await writeFile(path.join(output, 'src', asset), browserReady)
 }

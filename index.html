@@ -10,7 +10,19 @@
     <link rel="stylesheet" href="/src/admin-styles.css">
     <link rel="stylesheet" href="/src/biem-theme.css">
     <script src="/config.js"></script>
-    <script type="importmap">{"imports":{"@supabase/supabase-js":"https://esm.sh/@supabase/supabase-js@2.107.0"}}</script>
+    <script>
+      (() => {
+        const showStartupFallback = error => {
+          const root = document.getElementById('root')
+          if (!root || root.childNodes.length) return
+          root.innerHTML = '<main class="runtime-error-boundary"><h1>No pudimos mostrar esta pantalla</h1><p>Ocurrió un error inesperado al cargar el portal. Recarga la página o contacta al administrador.</p><pre></pre><button type="button">Recargar</button></main>'
+          root.querySelector('pre').textContent = error?.message || String(error || 'Error de carga')
+          root.querySelector('button').addEventListener('click', () => window.location.reload())
+        }
+        window.addEventListener('error', event => showStartupFallback(event.error || event.message))
+        window.addEventListener('unhandledrejection', event => showStartupFallback(event.reason))
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
